@@ -1,12 +1,12 @@
-# LanDetect - Landmark Detection Tool
+# LanDetect - Landmark Detection
 
-A Python-based application for real-time landmark detection in images and videos.
+A Python-based desktop application for real-time landmark detection.
 
 ## Features
 
-- Support for both images and video input
-- Real-time facial landmark detection
+- Support for both image and video input
 - JSON export of landmark coordinates
+- Real-time facial landmark detection
 - Multi-face detection capability
 - Automatic screenshot capture
 - Detailed logging system
@@ -73,5 +73,5 @@ This project is licensed under the Apache 2.0 License - see the LICENSE file for
 ## Acknowledgments
 
 - [MediaPipe](https://mediapipe.dev/) for facial landmark detection
-- [Pillow](https://python-pillow.org/) for image handling
 - [OpenCV](https://opencv.org/) for image processing
+- [Pillow](https://python-pillow.org/) for image handling
