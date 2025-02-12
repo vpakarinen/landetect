@@ -207,6 +207,12 @@ class LandmarkDetectorApp:
 
     def take_screenshot(self):
         """Take a screenshot of the current canvas content."""
+        # Check if canvas is empty
+        canvas_content = self.ui.canvas.find_all()
+        if not canvas_content:
+            logging.warning("Canvas is empty. Can't take screenshot.")
+            return
+
         # Check throttling
         current_time = int(datetime.datetime.now().timestamp() * 1000)
         if current_time - self.last_screenshot_time < self.throttle_delay:
