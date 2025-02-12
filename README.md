@@ -1,1 +1,1 @@
-# LanDetect - Real-time Face and Body Landmark Detection
+# LanDetect - Face and Body Landmark Detection
