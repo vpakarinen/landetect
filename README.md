@@ -1,1 +1,1 @@
-# LanDetect - Face and Body Landmark Detection
+## LanDetect - Detect landmarks in real-time and extract the data
