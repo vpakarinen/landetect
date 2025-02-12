@@ -23,14 +23,19 @@ class LandmarkDetectorApp:
 
         self.screenshots_dir = "screenshots"
         self.landmarks_dir = "landmarks"
+        self.logs_dir = "logs"
         if not os.path.exists(self.screenshots_dir):
             os.makedirs(self.screenshots_dir)
         if not os.path.exists(self.landmarks_dir):
             os.makedirs(self.landmarks_dir)
+        if not os.path.exists(self.logs_dir):
+            os.makedirs(self.logs_dir)
 
         self.last_screenshot_time = 0
         self.last_export_time = 0
         self.throttle_delay = 1000
+
+        self.setup_logging()
 
         self.vid = None
         self.image_path = None
@@ -42,13 +47,13 @@ class LandmarkDetectorApp:
 
         self.face_mesh_image = self.mp_face_mesh.FaceMesh(
             static_image_mode=True,
-            max_num_faces=1,
+            max_num_faces=5,  # Increase max faces
             refine_landmarks=True,
-            min_detection_confidence=0.2
+            min_detection_confidence=0.5,  # Increase confidence for better accuracy
         )
         self.face_mesh_video = self.mp_face_mesh.FaceMesh(
             static_image_mode=False,
-            max_num_faces=1,
+            max_num_faces=5,  # Match image processing
             refine_landmarks=True,
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5
@@ -162,6 +167,30 @@ class LandmarkDetectorApp:
     def update(self):
         """Update the frame for video display."""
         update(self)
+
+    def setup_logging(self):
+        """Setup logging configuration with timestamp-based log files."""
+        now = datetime.datetime.now()
+        log_filename = os.path.join(self.logs_dir, f"landetect_{now.strftime('%Y%m%d_%H%M%S')}.log")
+        
+        file_handler = logging.FileHandler(log_filename)
+        file_handler.setLevel(logging.INFO)
+        file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(file_formatter)
+        
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+        console_formatter = logging.Formatter('%(asctime)s: %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+        console_handler.setFormatter(console_formatter)
+        
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        
+        logger.handlers = []
+        logger.addHandler(file_handler)
+        logger.addHandler(console_handler)
+        
+        logging.info("Logging initialized")
 
 if __name__ == "__main__":
     try:
