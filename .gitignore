@@ -1,0 +1,29 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.eggs/
+dist/
+sdist/
+*.egg-info/
+build/
+wheels/
+LandmarkDetectionApp.egg-info/
+
+# PyInstaller
+**/__pycache__
+**/.DS_Store
+*.spec
+/dist
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+environment/
+myvenv/
+*/__pycache__/*

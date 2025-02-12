@@ -1,0 +1,1 @@
+# LanDetect - Desktop app for landmark detection
