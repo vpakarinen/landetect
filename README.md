@@ -50,7 +50,7 @@ python main.py
 
 Here are some examples of the landmark detection in action:
 
-![Example 1](screenshots/screenshot 2025-02-12 202853.png)
+![Example 1](screenshots/screenshot_20250212_202853.png)
 
 ![Example 2](screenshots/screenshot_20250212_194915.png)
 
