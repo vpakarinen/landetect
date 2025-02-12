@@ -1,8 +1,10 @@
 import mediapipe as mp
 import tkinter as tk
+import datetime
 import logging
 import json
 import cv2
+import io
 
 from tkinter import filedialog
 from PIL import Image, ImageTk
@@ -27,22 +29,33 @@ class LandmarkDetectorApp:
         self.face_mesh = self.mp_face_mesh.FaceMesh(max_num_faces=1, refine_landmarks=True, min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
         # UI elements
-        self.canvas_width = 640
-        self.canvas_height = 480
+        window_width = 800
+        window_height = 600
+        self.canvas_width = window_width - 20
+        self.canvas_height = window_height - 150
+
+        # Canvas for displaying image or video
         self.canvas = tk.Canvas(window, width=self.canvas_width, height=self.canvas_height)
-        self.canvas.pack()
+        self.canvas.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
+
+        # Horizontal line above buttons
+        separator = tk.Frame(window, height=2, bd=1, relief=tk.SUNKEN)
+        separator.grid(row=1, column=0, columnspan=4, padx=5, pady=5, sticky="ew")
 
         self.btn_load_image = tk.Button(window, text="Load Image", width=20, command=self.load_image)
-        self.btn_load_image.pack(pady=5)
+        self.btn_load_image.grid(row=2, column=0, padx=10, pady=10)
 
         self.btn_load_video = tk.Button(window, text="Load Video", width=20, command=self.load_video)
-        self.btn_load_video.pack(pady=5)
+        self.btn_load_video.grid(row=2, column=1, padx=10, pady=10)
 
         self.btn_output_landmarks = tk.Button(window, text="Output Landmarks", width=20, command=self.output_landmarks)
-        self.btn_output_landmarks.pack(pady=5)
+        self.btn_output_landmarks.grid(row=2, column=2, padx=10, pady=10)
 
         self.btn_export_to_json = tk.Button(window, text="Export to JSON", width=20, command=self.export_to_json)
-        self.btn_export_to_json.pack(pady=5)
+        self.btn_export_to_json.grid(row=2, column=3, padx=10, pady=10)
+
+        self.btn_screenshot = tk.Button(window, text="Take Screenshot", width=20, command=self.take_screenshot)
+        self.btn_screenshot.grid(row=3, column=0, columnspan=4, padx=10, pady=10)
 
         self.delay = 15
         self.update()
@@ -145,6 +158,23 @@ class LandmarkDetectorApp:
             print("Landmark data exported to landmark_data.json")
         else:
             print("No landmark data available to export.")
+
+    def take_screenshot(self):
+        """Take a screenshot of the current canvas content."""
+        try:
+            # Generate a unique filename using the current datetime
+            now = datetime.datetime.now()
+            filename = f"screenshot_{now.strftime('%Y%m%d_%H%M%S')}.png"
+
+            # Get the current canvas content as a postscript image
+            ps = self.canvas.postscript(colormode='color')
+
+            # Use PIL to convert the postscript image to a PNG image
+            img = Image.open(io.BytesIO(ps.encode('utf-8')))
+            img.save(filename, "png")
+            print(f"Screenshot saved to {filename}")
+        except Exception as e:
+            logging.error(f"Error taking screenshot: {e}")
 
     def update(self):
         """Update the frame for video display."""
