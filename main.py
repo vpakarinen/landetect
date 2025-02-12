@@ -49,7 +49,7 @@ class LandmarkDetectorApp:
                 self.photo = ImageTk.PhotoImage(self.image)
                 logging.info(f"PhotoImage created: {self.photo}")
                 self.ui.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
-                self.ui.canvas.image = self.photo  # Keep a reference to the image
+                self.ui.canvas.image = self.photo
                 self.detect_landmarks_on_image()
         except Exception as e:
             logging.error(f"Error loading image: {e}")
@@ -64,7 +64,7 @@ class LandmarkDetectorApp:
                 if not self.vid.isOpened():
                     logging.error("Error opening video file")
                     self.vid = None
-                    return  # Exit the function if video cannot be opened
+                    return
                 else:
                     self.all_landmarks = []
                     logging.info(f"Video file opened successfully: {self.video_path}")
@@ -171,7 +171,7 @@ class LandmarkDetectorApp:
                         self.image = self.image.resize((self.ui.canvas_width, self.ui.canvas_height), Image.Resampling.LANCZOS)
                         self.photo = ImageTk.PhotoImage(self.image)
                         self.ui.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
-                        self.ui.canvas.image = self.photo  # Keep a reference to the image
+                        self.ui.canvas.image = self.photo 
                         
                         self.frame_count += 1
                     else:
@@ -181,7 +181,7 @@ class LandmarkDetectorApp:
                             self.vid = None
                         self.ui.canvas.delete("all")
                         self.export_to_json()
-                        self.frame_count = 0  # Reset frame counter
+                        self.frame_count = 0
 
                 except Exception as e:
                     logging.error(f"Error processing frame: {e}")
@@ -198,6 +198,6 @@ if __name__ == "__main__":
     try:
         window = tk.Tk()
         window.geometry("800x600")
-        app = LandmarkDetectorApp(window, "Landmark Detector")
+        app = LandmarkDetectorApp(window, "LanDetect - Landmark Detector")
     except Exception as e:
         logging.exception("An error occurred during application startup:")
