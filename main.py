@@ -6,48 +6,62 @@ import json
 import cv2
 import io
 
+from media_processor import update
 from tkinter import filedialog
 from PIL import Image, ImageTk
 from ui import UI
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s: %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 class LandmarkDetectorApp:
     def __init__(self, window, window_title):
         self.window = window
         self.window.title(window_title)
 
-        # Initialize video related attributes
         self.vid = None
         self.image_path = None
         self.all_landmarks = []
         self.frame_count = 0
 
-        # MediaPipe setup
         self.mp_face_mesh = mp.solutions.face_mesh
         self.mp_drawing = mp.solutions.drawing_utils
-        self.face_mesh = self.mp_face_mesh.FaceMesh(max_num_faces=1, refine_landmarks=True, min_detection_confidence=0.5, min_tracking_confidence=0.5)
+
+        self.face_mesh_image = self.mp_face_mesh.FaceMesh(
+            static_image_mode=True,
+            max_num_faces=1,
+            refine_landmarks=True,
+            min_detection_confidence=0.2
+        )
+        self.face_mesh_video = self.mp_face_mesh.FaceMesh(
+            static_image_mode=False,
+            max_num_faces=1,
+            refine_landmarks=True,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5
+        )
 
         # UI elements
         self.ui = UI(window, self)
 
         self.delay = 15
         self.update()
-
         self.window.mainloop()
 
     def load_image(self):
         """Load an image from a file."""
         try:
+            if hasattr(self, 'vid') and self.vid:
+                self.vid.release()
+                self.vid = None
+                self.ui.canvas.delete("all")
+
             self.image_path = filedialog.askopenfilename(initialdir=".", title="Select an image",
                                                        filetypes=(("Image files", "*.png;*.jpg;*.jpeg"), ("all files", "*.*")))
             if self.image_path:
                 self.image = Image.open(self.image_path)
                 self.image = self.image.resize((self.ui.canvas_width, self.ui.canvas_height), Image.Resampling.LANCZOS)
-                logging.info(f"Image size after resizing: {self.image.size}")
                 self.photo = ImageTk.PhotoImage(self.image)
-                logging.info(f"PhotoImage created: {self.photo}")
                 self.ui.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
                 self.ui.canvas.image = self.photo
                 self.detect_landmarks_on_image()
@@ -57,56 +71,107 @@ class LandmarkDetectorApp:
     def load_video(self):
         """Load a video from a file."""
         try:
-            self.video_path = filedialog.askopenfilename(initialdir=".", title="Select a video",
-                                                        filetypes=(("Video files", "*.mp4;*.avi;*.mov"), ("all files", "*.*")))
-            if self.video_path:
-                self.vid = cv2.VideoCapture(self.video_path)
-                if not self.vid.isOpened():
-                    logging.error("Error opening video file")
-                    self.vid = None
-                    return
-                else:
-                    self.all_landmarks = []
-                    logging.info(f"Video file opened successfully: {self.video_path}")
+            if hasattr(self, 'image_path'):
+                delattr(self, 'image_path')
+                self.ui.canvas.delete("all")
+
+            video_path = filedialog.askopenfilename(initialdir=".", title="Select a video",
+                                                   filetypes=(("Video files", "*.mp4;*.avi;*.mov"), ("all files", "*.*")))
+            if video_path:
+                 if hasattr(self, 'vid') and self.vid:
+                     self.vid.release()
+                 self.vid = cv2.VideoCapture(video_path)
+                 if self.vid.isOpened():
+                     self.frame_count = 0
+                     logging.info(f"Successfully opened video: {video_path}")
+                 else:
+                     logging.error(f"Error opening video file: {video_path}")
+                     self.vid = None
+            else:
+                logging.info("Video selection cancelled")
         except Exception as e:
             logging.error(f"Error loading video: {e}")
 
     def detect_landmarks_on_image(self):
         """Detect landmarks on a loaded image."""
-        if hasattr(self, 'image_path'):
+        if hasattr(self, 'image_path') and (not hasattr(self, 'vid') or self.vid is None):
             try:
+                self.all_landmarks = []
+                
                 image = cv2.imread(self.image_path)
+                if image is None:
+                    logging.warning("Failed to load image.")
+                    return
+                logging.info(f"Original image shape: {image.shape}")
                 image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                results = self.face_mesh.process(image_rgb)
+                logging.info(f"RGB image shape: {image_rgb.shape}")
+                
+                display_image = image_rgb.copy()
+                
+                results = self.face_mesh_image.process(image_rgb)
+                logging.info(f"Face detection results: {results}")
+                logging.info(f"Multi face landmarks present: {results.multi_face_landmarks is not None}")
+                if results.multi_face_landmarks:
+                    logging.info(f"Number of faces detected: {len(results.multi_face_landmarks)}")
+                    logging.info(f"First face landmarks count: {len(results.multi_face_landmarks[0].landmark)}")
 
                 if results.multi_face_landmarks:
+                    logging.info(f"Found {len(results.multi_face_landmarks)} faces")
                     for face_landmarks in results.multi_face_landmarks:
                         self.mp_drawing.draw_landmarks(
-                            image=image,
+                            image=display_image,
                             landmark_list=face_landmarks,
                             connections=self.mp_face_mesh.FACEMESH_TESSELATION,
-                            landmark_drawing_spec=self.mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=1, circle_radius=1),
-                            connection_drawing_spec=self.mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=1),
+                            landmark_drawing_spec=self.mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=1, circle_radius=1),
+                            connection_drawing_spec=self.mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=1),
                         )
 
-                        self.all_landmarks = []
                         for idx, landmark in enumerate(face_landmarks.landmark):
-                            logging.info(f"Landmark {idx} detected: x={landmark.x}, y={landmark.y}")
                             x = landmark.x * image.shape[1]
                             y = landmark.y * image.shape[0]
                             self.all_landmarks.append({"frame": 0, "landmark_id": idx, "x": x, "y": y})
                         logging.info(f"Total landmarks detected: {len(self.all_landmarks)}")
 
-                # Convert the image to Tkinter format
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                self.image = Image.fromarray(image)
-                self.image = self.image.resize((self.ui.canvas_width, self.ui.canvas_height), Image.Resampling.LANCZOS)
-                self.photo = ImageTk.PhotoImage(self.image)
-                self.ui.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
+                    self.image = Image.fromarray(display_image)
+                    self.image = self.image.resize((self.ui.canvas_width, self.ui.canvas_height), Image.Resampling.LANCZOS)
+                    self.photo = ImageTk.PhotoImage(self.image)
+                    self.ui.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
+                    self.ui.canvas.image = self.photo
+
+                    # Export landmarks
+                    self.export_to_json()
+                    logging.info("Landmarks exported successfully")
+                else:
+                    logging.warning("No faces detected in the image")
+                    logging.info("Trying BGR color space...")
+
+                    results = self.face_mesh_image.process(image)
+                    if results.multi_face_landmarks:
+                        logging.info("Face detected in BGR color space!")
+                        for face_landmarks in results.multi_face_landmarks:
+                            self.mp_drawing.draw_landmarks(
+                                image=display_image,
+                                landmark_list=face_landmarks,
+                                connections=self.mp_face_mesh.FACEMESH_TESSELATION,
+                                landmark_drawing_spec=self.mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=1, circle_radius=1),
+                                connection_drawing_spec=self.mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=1),
+                            )
+                            for idx, landmark in enumerate(face_landmarks.landmark):
+                                x = landmark.x * image.shape[1]
+                                y = landmark.y * image.shape[0]
+                                self.all_landmarks.append({"frame": 0, "landmark_id": idx, "x": x, "y": y})
+                        self.image = Image.fromarray(display_image)
+                        self.image = self.image.resize((self.ui.canvas_width, self.ui.canvas_height), Image.Resampling.LANCZOS)
+                        self.photo = ImageTk.PhotoImage(self.image)
+                        self.ui.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
+                        self.ui.canvas.image = self.photo
+                        self.export_to_json()
+                    else:
+                        logging.warning("No faces detected in BGR color space either.")
 
             except Exception as e:
                 logging.error(f"Error detecting landmarks on image: {e}")
-            self.export_to_json()
+                logging.exception("Full traceback:")
 
     def clear_canvas(self):
         """Clear the canvas."""
@@ -123,14 +188,10 @@ class LandmarkDetectorApp:
     def take_screenshot(self):
         """Take a screenshot of the current canvas content."""
         try:
-            # Generate a unique filename using the current datetime
             now = datetime.datetime.now()
             filename = f"screenshot_{now.strftime('%Y%m%d_%H%M%S')}.png"
-
-            # Get the current canvas content as a postscript image
             ps = self.ui.canvas.postscript(colormode='color')
 
-            # Use PIL to convert the postscript image to a PNG image
             img = Image.open(io.BytesIO(ps.encode('utf-8')))
             img.save(filename, "png")
             print(f"Screenshot saved to {filename}")
@@ -139,60 +200,7 @@ class LandmarkDetectorApp:
 
     def update(self):
         """Update the frame for video display."""
-        try:
-            if self.vid and self.vid.isOpened():
-                try:
-                    ret, frame = self.vid.read()
-                    if ret:
-                        # Process frame for landmarks
-                        image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        results = self.face_mesh.process(image_rgb)
-
-                        if results.multi_face_landmarks:
-                            for face_landmarks in results.multi_face_landmarks:
-                                # Draw landmarks on the frame
-                                self.mp_drawing.draw_landmarks(
-                                    image=frame,
-                                    landmark_list=face_landmarks,
-                                    connections=self.mp_face_mesh.FACEMESH_TESSELATION,
-                                    landmark_drawing_spec=self.mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=1, circle_radius=1),
-                                    connection_drawing_spec=self.mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=1),
-                                )
-                                
-                                # Store landmark coordinates
-                                for idx, landmark in enumerate(face_landmarks.landmark):
-                                    x = landmark.x * frame.shape[1]
-                                    y = landmark.y * frame.shape[0]
-                                    print(f"Frame {self.frame_count}, Landmark {idx}: x={x:.2f}, y={y:.2f}")
-                                    self.all_landmarks.append({"frame": self.frame_count, "landmark_id": idx, "x": x, "y": y})
-
-                        # Convert frame to PIL Image and display
-                        self.image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                        self.image = self.image.resize((self.ui.canvas_width, self.ui.canvas_height), Image.Resampling.LANCZOS)
-                        self.photo = ImageTk.PhotoImage(self.image)
-                        self.ui.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
-                        self.ui.canvas.image = self.photo 
-                        
-                        self.frame_count += 1
-                    else:
-                        logging.info(f"End of video reached. Processed {self.frame_count} frames.")
-                        if self.vid:
-                            self.vid.release()
-                            self.vid = None
-                        self.ui.canvas.delete("all")
-                        self.export_to_json()
-                        self.frame_count = 0
-
-                except Exception as e:
-                    logging.error(f"Error processing frame: {e}")
-                    if self.vid:
-                        self.vid.release()
-                        self.vid = None
-                    self.ui.canvas.delete("all")
-
-            self.window.after(self.delay, self.update)
-        except Exception as e:
-            logging.error(f"Error in update loop: {e}")
+        update(self)
 
 if __name__ == "__main__":
     try:
