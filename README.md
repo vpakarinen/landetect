@@ -1,1 +1,1 @@
-# LanDetect - Desktop app for landmark detection
+# LanDetect - Real-time Face and Body Landmark Detection
