@@ -4,20 +4,31 @@ import datetime
 import logging
 import json
 import cv2
-import io
-
+import os
+from PIL import ImageGrab
 from media_processor import update
 from tkinter import filedialog
 from PIL import Image, ImageTk
 from ui import UI
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s: %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 class LandmarkDetectorApp:
     def __init__(self, window, window_title):
         self.window = window
         self.window.title(window_title)
+
+        self.screenshots_dir = "screenshots"
+        self.landmarks_dir = "landmarks"
+        if not os.path.exists(self.screenshots_dir):
+            os.makedirs(self.screenshots_dir)
+        if not os.path.exists(self.landmarks_dir):
+            os.makedirs(self.landmarks_dir)
+
+        # Throttling for buttons
+        self.last_screenshot_time = 0
+        self.last_export_time = 0
+        self.throttle_delay = 1000
 
         self.vid = None
         self.image_path = None
@@ -41,7 +52,6 @@ class LandmarkDetectorApp:
             min_tracking_confidence=0.5
         )
 
-        # UI elements
         self.ui = UI(window, self)
 
         self.delay = 15
@@ -137,9 +147,8 @@ class LandmarkDetectorApp:
                     self.photo = ImageTk.PhotoImage(self.image)
                     self.ui.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
                     self.ui.canvas.image = self.photo
-
-                    # Export landmarks
                     self.export_to_json()
+                    
                     logging.info("Landmarks exported successfully")
                 else:
                     logging.warning("No faces detected in the image")
@@ -178,23 +187,45 @@ class LandmarkDetectorApp:
         self.ui.canvas.delete("all")
 
     def export_to_json(self):
+        # Check throttling
+        current_time = int(datetime.datetime.now().timestamp() * 1000)
+        if current_time - self.last_export_time < self.throttle_delay:
+            return
+        self.last_export_time = current_time
+
         if hasattr(self, 'all_landmarks') and self.all_landmarks:
-            with open('landmark_data.json', 'w') as f:
-                json.dump(self.all_landmarks, f)
-            print("Landmark data exported to landmark_data.json")
+            now = datetime.datetime.now()
+            filename = f"landmark_data_{now.strftime('%Y%m%d_%H%M%S')}.json"
+            filepath = os.path.join(self.landmarks_dir, filename)
+            logging.info(f"Exporting landmarks to {filename}")
+            landmarks_copy = {"landmarks": self.all_landmarks.copy(), "timestamp": now.isoformat()}
+            with open(filepath, 'w') as f:
+                json.dump(landmarks_copy, f, indent=2)
+            print(f"Landmark data exported to {filepath}")
         else:
             print("No landmark data available to export.")
 
     def take_screenshot(self):
         """Take a screenshot of the current canvas content."""
+        # Check throttling
+        current_time = int(datetime.datetime.now().timestamp() * 1000)
+        if current_time - self.last_screenshot_time < self.throttle_delay:
+            return
+        self.last_screenshot_time = current_time
+
         try:
             now = datetime.datetime.now()
             filename = f"screenshot_{now.strftime('%Y%m%d_%H%M%S')}.png"
-            ps = self.ui.canvas.postscript(colormode='color')
-
-            img = Image.open(io.BytesIO(ps.encode('utf-8')))
-            img.save(filename, "png")
-            print(f"Screenshot saved to {filename}")
+            filepath = os.path.join(self.screenshots_dir, filename)
+            
+            x = self.ui.canvas.winfo_rootx()
+            y = self.ui.canvas.winfo_rooty()
+            width = self.ui.canvas.winfo_width()
+            height = self.ui.canvas.winfo_height()
+            
+            screenshot = ImageGrab.grab(bbox=(x, y, x+width, y+height))
+            screenshot.save(filepath, "PNG", optimize=True)
+            print(f"Screenshot saved to {filepath}")
         except Exception as e:
             logging.error(f"Error taking screenshot: {e}")
 

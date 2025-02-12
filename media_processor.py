@@ -1,7 +1,8 @@
 import tkinter as tk
-import cv2
-from PIL import Image, ImageTk
 import logging
+import cv2
+
+from PIL import Image, ImageTk
 
 def update(self):
     try:
