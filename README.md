@@ -49,9 +49,9 @@ python main.py
 
 ## Screenshots
 
-![Example 1](screenshots/Screenshot02-13-202515.50.15.png)
+![Example 1](screenshots/Screenshot02-13-202520.33.38.png)
 
-![Example 2](screenshots/Screenshot02-13-202515.49.20.png)
+![Example 2](screenshots/Screenshot02-13-202520.34.16.png)
 
 ## Support
 

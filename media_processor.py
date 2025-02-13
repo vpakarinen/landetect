@@ -15,17 +15,22 @@ def process_video_frame(app, frame):
             
             if results and results.multi_face_landmarks:
                 lips_spec = app.mp_drawing.DrawingSpec(
-                    color=(0, 0, 255),
+                    color=(255, 0, 0),  # Blue
                     thickness=1,
                     circle_radius=0
                 )
                 eyes_spec = app.mp_drawing.DrawingSpec(
-                    color=(255, 0, 0),
+                    color=(255, 0, 0),  # Blue
                     thickness=1,
                     circle_radius=0
                 )
                 face_spec = app.mp_drawing.DrawingSpec(
-                    color=(0, 255, 0),
+                    color=(0, 255, 0),  # Green
+                    thickness=1,
+                    circle_radius=0
+                )
+                mesh_spec = app.mp_drawing.DrawingSpec(
+                    color=(255, 0, 0),  # Blue
                     thickness=1,
                     circle_radius=0
                 )
@@ -45,7 +50,7 @@ def process_video_frame(app, frame):
                         landmark_list=face_landmarks,
                         connections=app.mp_face_mesh.FACEMESH_TESSELATION,
                         landmark_drawing_spec=None,
-                        connection_drawing_spec=lips_spec
+                        connection_drawing_spec=mesh_spec
                     )
                     app.mp_drawing.draw_landmarks(
                         image=overlay,
@@ -84,7 +89,7 @@ def process_video_frame(app, frame):
                         connection_drawing_spec=face_spec
                     )
                 
-                alpha = 0.4  # Reduced opacity
+                alpha = 0.4
                 frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
                 
                 for face_idx, face_landmarks in enumerate(results.multi_face_landmarks):
@@ -130,17 +135,22 @@ def detect_landmarks_on_image(app, frame):
             
             if results and results.multi_face_landmarks:
                 lips_spec = app.mp_drawing.DrawingSpec(
-                    color=(0, 0, 255),
+                    color=(255, 0, 0),  # Blue
                     thickness=1,
                     circle_radius=0
                 )
                 eyes_spec = app.mp_drawing.DrawingSpec(
-                    color=(255, 0, 0),
+                    color=(255, 0, 0),  # Blue
                     thickness=1,
                     circle_radius=0
                 )
                 face_spec = app.mp_drawing.DrawingSpec(
-                    color=(0, 255, 0),
+                    color=(0, 255, 0),  # Green
+                    thickness=1,
+                    circle_radius=0
+                )
+                mesh_spec = app.mp_drawing.DrawingSpec(
+                    color=(255, 0, 0),  # Blue
                     thickness=1,
                     circle_radius=0
                 )
@@ -160,7 +170,7 @@ def detect_landmarks_on_image(app, frame):
                         landmark_list=face_landmarks,
                         connections=app.mp_face_mesh.FACEMESH_TESSELATION,
                         landmark_drawing_spec=None,
-                        connection_drawing_spec=lips_spec
+                        connection_drawing_spec=mesh_spec
                     )
                     app.mp_drawing.draw_landmarks(
                         image=overlay,
