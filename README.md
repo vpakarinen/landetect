@@ -48,11 +48,9 @@ python main.py
 
 ## Screenshots
 
-![Example 1](screenshots/Screenshot02-13-202513.58.33.png)
+![Example 1](screenshots/Screenshot02-13-202513.59.32.png)
 
-![Example 2](screenshots/Screenshot02-13-202513.59.32.png)
-
-![Example 3](screenshots/Screenshot02-13-202514.00.21.png)
+![Example 2](screenshots/Screenshot02-13-202514.00.21.png)
 
 ## Support
 
@@ -72,4 +70,4 @@ This project is licensed under the Apache 2.0 License - see the LICENSE file for
 
 - [MediaPipe](https://mediapipe.dev/) for facial landmark detection
 - [OpenCV](https://opencv.org/) for image processing
-- [Pillow](https://python-pillow.org/) for image handling
+- [Pillow](https://pillow.readthedocs.io/en/stable/) for image handling
