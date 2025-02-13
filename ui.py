@@ -1,5 +1,5 @@
-import tkinter as tk
 from tkinter import ttk
+import tkinter as tk
 
 class UI:
     def __init__(self, window, app):
@@ -10,7 +10,6 @@ class UI:
         self.canvas_width = self.window_width - 20
         self.canvas_height = self.window_height - 200
 
-        # Configure window minimum size
         window.minsize(self.window_width, self.window_height)
         
         self.canvas = tk.Canvas(window, width=self.canvas_width, height=self.canvas_height)

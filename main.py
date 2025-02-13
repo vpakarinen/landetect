@@ -3,7 +3,6 @@ from PIL import ImageGrab
 
 import mediapipe as mp
 import tkinter as tk
-from tkinter import messagebox
 import datetime
 import logging
 import json
@@ -41,12 +40,12 @@ class LandmarkDetectorApp:
         self.vid = None
         self.image_path = None
         self.all_landmarks = []
-        self.frame_landmarks = []  # Store landmarks for current frame
+        self.frame_landmarks = []
         self.frame_count = 0
         self.playing = True
         self.delay = 15
         self.last_frame_time = 0
-        self.realtime_capture = False  # Flag for real-time capture
+        self.realtime_capture = False
 
         self.mp_face_mesh = mp.solutions.face_mesh
         self.mp_drawing = mp.solutions.drawing_utils
@@ -120,7 +119,6 @@ class LandmarkDetectorApp:
                     raise Exception("Failed to create VideoCapture object")
                 
                 if self.vid.isOpened():
-                    # Get video properties
                     width = int(self.vid.get(cv2.CAP_PROP_FRAME_WIDTH))
                     height = int(self.vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
                     fps = int(self.vid.get(cv2.CAP_PROP_FPS))
@@ -171,7 +169,6 @@ class LandmarkDetectorApp:
             filename = f"landmark_data_{now.strftime('%Y%m%d_%H%M%S')}.json"
             filepath = os.path.join(self.landmarks_dir, filename)
             
-            # Create a copy of landmarks with metadata
             landmarks_data = {
                 "metadata": {
                     "timestamp": now.isoformat(),
@@ -196,7 +193,6 @@ class LandmarkDetectorApp:
             logging.info(f"Landmarks exported to {filepath}")
             tk.messagebox.showinfo("Export", f"Landmarks exported to {filename}")
             
-            # Clear landmarks after successful export if real-time capture is enabled
             if self.realtime_capture:
                 self.all_landmarks = []
                 
@@ -222,7 +218,7 @@ class LandmarkDetectorApp:
             y = self.window.winfo_rooty() + self.ui.canvas.winfo_y()
             x1 = x + self.ui.canvas.winfo_width()
             y1 = y + self.ui.canvas.winfo_height()
-            # Capture the specified area
+
             screenshot = ImageGrab.grab().crop((x, y, x1, y1))
 
             now = datetime.datetime.now()
@@ -237,54 +233,46 @@ class LandmarkDetectorApp:
         """Start real-time landmark capture"""
         self.realtime_capture = True
         logging.info("Real-time landmark capture enabled")
-        self.all_landmarks = []  # Clear previous landmarks
+        self.all_landmarks = []
         
     def stop_realtime_capture(self):
         """Stop real-time landmark capture"""
         self.realtime_capture = False
         logging.info("Real-time landmark capture disabled")
-        # Don't clear landmarks when stopping real-time capture
         
     def update(self):
         """Update the frame for video display."""
         try:
             current_time = int(datetime.datetime.now().timestamp() * 1000)
             
-            # Check if enough time has passed since last frame
             if current_time - self.last_frame_time >= self.delay:
                 if hasattr(self, 'vid') and self.vid and self.vid.isOpened() and self.playing:
                     try:
                         ret, frame = self.vid.read()
                         if ret:
-                            # Process frame and update UI
                             frame, landmarks = process_video_frame(self, frame)
                             if frame is not None:
-                                # Convert frame to PhotoImage and display
                                 image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                                 image = image.resize((self.ui.canvas_width, self.ui.canvas_height), Image.Resampling.LANCZOS)
                                 photo = ImageTk.PhotoImage(image)
                                 self.ui.canvas.create_image(0, 0, image=photo, anchor=tk.NW)
                                 self.ui.canvas.image = photo
                                 
-                                # Always collect landmarks, but only keep them in real-time mode
                                 if self.realtime_capture:
                                     if landmarks:
                                         self.all_landmarks.extend(landmarks)
                                 else:
-                                    # In non-real-time mode, only keep the latest landmarks
                                     if landmarks:
                                         self.all_landmarks = landmarks
                                 
                                 self.frame_count += 1
                         else:
-                            # End of video reached
                             logging.info(f"End of video reached. Processed {self.frame_count} frames.")
                             self.vid.release()
                             self.vid = None
                             self.ui.canvas.delete("all")
                             self.ui.btn_play_pause.config(state=tk.DISABLED)
                             
-                            # Always export landmarks at the end, regardless of mode
                             if len(self.all_landmarks) > 0:
                                 self.export_to_json()
                             
@@ -304,7 +292,6 @@ class LandmarkDetectorApp:
         except Exception as e:
             logging.error(f"Error in update loop: {e}")
         finally:
-            # Schedule next update
             self.window.after(max(1, self.delay // 2), self.update)
 
     def setup_logging(self):

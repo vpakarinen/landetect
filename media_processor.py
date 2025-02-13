@@ -7,9 +7,8 @@ from PIL import Image, ImageTk
 def process_video_frame(app, frame):
     """Process a single video frame and return the processed frame and landmarks."""
     try:
-        # Convert frame from BGR to RGB for processing
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame_landmarks = []  # Store landmarks for current frame
+        frame_landmarks = []
         
         try:
             results = app.face_mesh_video.process(image)
@@ -37,7 +36,6 @@ def process_video_frame(app, frame):
                 alpha = 0.6
                 frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
                 
-                # Always collect landmarks, with improved data structure
                 for face_idx, face_landmarks in enumerate(results.multi_face_landmarks):
                     face_data = {
                         "frame": app.frame_count,
@@ -46,10 +44,9 @@ def process_video_frame(app, frame):
                     }
                     
                     for idx, landmark in enumerate(face_landmarks.landmark):
-                        # Convert normalized coordinates to pixel coordinates
-                        x = round(landmark.x * frame.shape[1], 2)  # Round to 2 decimal places
-                        y = round(landmark.y * frame.shape[0], 2)  # Round to 2 decimal places
-                        z = round(landmark.z, 3)  # Include Z coordinate, rounded to 3 decimal places
+                        x = round(landmark.x * frame.shape[1], 2)
+                        y = round(landmark.y * frame.shape[0], 2)
+                        z = round(landmark.z, 3)
                         
                         face_data["landmarks"].append({
                             "id": idx,
@@ -64,7 +61,6 @@ def process_video_frame(app, frame):
             
         except Exception as e:
             logging.error(f"Error processing landmarks: {e}")
-            # Continue with frame display even if landmark processing fails
         
         return frame, frame_landmarks
             
@@ -79,7 +75,7 @@ def update(app):
             return
             
         if not app.playing:
-            return  # Don't process new frames when paused
+            return
             
         ret, frame = app.vid.read()
         if ret:
@@ -87,7 +83,6 @@ def update(app):
             
             if frame is not None:
                 try:
-                    # Convert frame back to RGB for display
                     image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                     app.image = image.resize((app.ui.canvas_width, app.ui.canvas_height), Image.Resampling.LANCZOS)
                     app.photo = ImageTk.PhotoImage(app.image)
@@ -96,7 +91,6 @@ def update(app):
                     
                     app.frame_count += 1
                     
-                    # Store landmarks for this frame if real-time capture is enabled
                     if app.realtime_capture:
                         app.all_landmarks.extend(frame_landmarks)
                     
@@ -109,7 +103,7 @@ def update(app):
                 app.vid.release()
                 app.vid = None
             app.ui.canvas.delete("all")
-            app.ui.btn_play_pause.config(state=tk.DISABLED)  # Disable play/pause button at end of video
+            app.ui.btn_play_pause.config(state=tk.DISABLED)
             app.export_to_json()
             app.frame_count = 0
             
