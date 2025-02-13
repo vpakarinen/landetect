@@ -28,7 +28,6 @@ def detect_landmarks_on_image(self, image_path, face_mesh_image, mp_drawing, mp_
         best_results = None
         max_faces = 0
         
-        # Log scale attempts
         logging.info(f"Attempting detection at scales: {scales}")
         
         for scale in scales:
@@ -60,12 +59,10 @@ def detect_landmarks_on_image(self, image_path, face_mesh_image, mp_drawing, mp_
                 face_size = face_width * face_height
                 faces_with_size.append((face_size, face_landmarks))
             
-            # Sort faces by size (largest first) and filter small faces
             faces_with_size.sort(reverse=True)
             valid_faces = [(size, landmarks) for size, landmarks in faces_with_size if size * width * height >= min_face_size * min_face_size]
             logging.info(f"Valid faces after size filtering: {len(valid_faces)}")
             
-            # Create semi-transparent drawing specs
             landmark_spec = mp_drawing.DrawingSpec(
                 color=(255, 0, 0),
                 thickness=2,
@@ -76,7 +73,6 @@ def detect_landmarks_on_image(self, image_path, face_mesh_image, mp_drawing, mp_
                 thickness=2
             )
             
-            # Create overlay for transparent drawing
             overlay = display_image.copy()
             
             for face_idx, (size, face_landmarks) in enumerate(valid_faces):
@@ -95,8 +91,7 @@ def detect_landmarks_on_image(self, image_path, face_mesh_image, mp_drawing, mp_
                     self.all_landmarks.append({"face_index": face_idx, "landmark_id": idx, "x": x, "y": y})
                 logging.info(f"Face {face_idx + 1}: Processed {len(face_landmarks.landmark)} landmarks")
             
-            # Apply transparency
-            alpha = 0.6  # 60% opacity
+            alpha = 0.6
             display_image = cv2.addWeighted(overlay, alpha, display_image, 1 - alpha, 0)
 
             self.image = Image.fromarray(display_image)

@@ -4,10 +4,10 @@ class UI:
     def __init__(self, window, app):
         self.window = window
         self.app = app
-        self.window_width = 640  # Reduced from 800
+        self.window_width = 640
         self.window_height = 600
-        self.canvas_width = self.window_width - 20  # Will be 620
-        self.canvas_height = self.window_height - 150  # Will be 450
+        self.canvas_width = self.window_width - 20
+        self.canvas_height = self.window_height - 150
 
         self.canvas = tk.Canvas(window, width=self.canvas_width, height=self.canvas_height)
         self.canvas.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
@@ -26,5 +26,8 @@ class UI:
 
         self.btn_screenshot = tk.Button(window, text="Take Screenshot", width=20, command=self.app.take_screenshot)
         self.btn_screenshot.grid(row=3, column=1, padx=10, pady=10)
+
+        self.btn_play_pause = tk.Button(window, text="Pause", width=20, command=self.app.toggle_play_pause, state=tk.DISABLED)
+        self.btn_play_pause.grid(row=3, column=0, padx=10, pady=10)
 
         window.grid_rowconfigure(3, weight=1)
