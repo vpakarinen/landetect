@@ -71,3 +71,6 @@ This project is licensed under the Apache 2.0 License - see the LICENSE file for
 - [MediaPipe](https://mediapipe.dev/) for facial landmark detection
 - [OpenCV](https://opencv.org/) for image processing
 - [Pillow](https://pillow.readthedocs.io/en/stable/) for image handling
+
+## Author
+- @vpakarinen
