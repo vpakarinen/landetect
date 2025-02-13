@@ -8,10 +8,14 @@ import logging
 import json
 import cv2
 import os
+import numpy as np
 
-from image_processor import detect_landmarks_on_image
-from media_processor import process_video_frame
-from tkinter import filedialog
+import tkinter as tk
+from tkinter import filedialog, ttk, messagebox
+from PIL import Image, ImageTk
+from PIL import ImageGrab
+
+from media_processor import process_video_frame, detect_landmarks_on_image
 from ui import UI
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s: %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -150,8 +154,29 @@ class LandmarkDetectorApp:
 
     def detect_landmarks_on_image(self):
         """Detect landmarks on a loaded image."""
-        if hasattr(self, 'image_path') and (not hasattr(self, 'vid') or self.vid is None):
-            detect_landmarks_on_image(self, self.image_path, self.face_mesh_image, self.mp_drawing, self.mp_face_mesh, self.ui)
+        try:
+            if hasattr(self, 'image_path') and (not hasattr(self, 'vid') or self.vid is None):
+                # Convert PIL Image to OpenCV format
+                cv_image = cv2.cvtColor(np.array(self.image), cv2.COLOR_RGB2BGR)
+                
+                # Process image and get landmarks
+                processed_image, landmarks = detect_landmarks_on_image(self, cv_image)
+                
+                if processed_image is not None:
+                    # Convert back to PIL format for display
+                    processed_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
+                    processed_pil = processed_pil.resize((self.ui.canvas_width, self.ui.canvas_height), Image.Resampling.LANCZOS)
+                    self.photo = ImageTk.PhotoImage(processed_pil)
+                    self.ui.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
+                    self.ui.canvas.image = self.photo
+                    
+                    # Store landmarks
+                    self.all_landmarks = landmarks
+                    
+        except Exception as e:
+            logging.error(f"Error detecting landmarks on image: {e}")
+            import traceback
+            logging.error(traceback.format_exc())
 
     def clear_canvas(self):
         """Clear the canvas."""

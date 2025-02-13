@@ -14,26 +14,62 @@ def process_video_frame(app, frame):
             results = app.face_mesh_video.process(image)
             
             if results and results.multi_face_landmarks:
-                landmark_spec = app.mp_drawing.DrawingSpec(
-                    color=(255, 0, 0),
-                    thickness=2,
-                    circle_radius=1
+                # Drawing specifications for different facial features
+                lips_spec = app.mp_drawing.DrawingSpec(
+                    color=(0, 0, 255),  # Red for lips
+                    thickness=1,
+                    circle_radius=0
                 )
-                connection_spec = app.mp_drawing.DrawingSpec(
-                    color=(0, 0, 255),
-                    thickness=2
+                eyes_spec = app.mp_drawing.DrawingSpec(
+                    color=(255, 0, 0),  # Blue for eyes
+                    thickness=1,
+                    circle_radius=0
+                )
+                face_spec = app.mp_drawing.DrawingSpec(
+                    color=(0, 255, 0),  # Green for other facial features
+                    thickness=1,
+                    circle_radius=0
                 )
                 
                 overlay = frame.copy()
-                app.mp_drawing.draw_landmarks(
-                    image=overlay,
-                    landmark_list=results.multi_face_landmarks[0],
-                    connections=app.mp_face_mesh.FACEMESH_CONTOURS,
-                    landmark_drawing_spec=landmark_spec,
-                    connection_drawing_spec=connection_spec,
-                )
                 
-                alpha = 0.6
+                # Draw face mesh with different colors for features
+                for face_landmarks in results.multi_face_landmarks:
+                    # Draw lips
+                    app.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=face_landmarks,
+                        connections=app.mp_face_mesh.FACEMESH_LIPS,
+                        landmark_drawing_spec=lips_spec,
+                        connection_drawing_spec=lips_spec
+                    )
+                    
+                    # Draw eyes
+                    app.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=face_landmarks,
+                        connections=app.mp_face_mesh.FACEMESH_LEFT_EYE,
+                        landmark_drawing_spec=eyes_spec,
+                        connection_drawing_spec=eyes_spec
+                    )
+                    app.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=face_landmarks,
+                        connections=app.mp_face_mesh.FACEMESH_RIGHT_EYE,
+                        landmark_drawing_spec=eyes_spec,
+                        connection_drawing_spec=eyes_spec
+                    )
+                    
+                    # Draw rest of the face mesh with fewer landmarks
+                    app.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=face_landmarks,
+                        connections=app.mp_face_mesh.FACEMESH_FACE_OVAL,  # Only draw face oval instead of all contours
+                        landmark_drawing_spec=face_spec,
+                        connection_drawing_spec=face_spec
+                    )
+                
+                alpha = 0.4  # Reduced opacity
                 frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
                 
                 for face_idx, face_landmarks in enumerate(results.multi_face_landmarks):
@@ -66,6 +102,107 @@ def process_video_frame(app, frame):
             
     except Exception as e:
         logging.error(f"Error in process_video_frame: {e}")
+        return None, []
+
+def detect_landmarks_on_image(app, frame):
+    """Detect landmarks on a single image."""
+    try:
+        # Convert frame from BGR to RGB for processing
+        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame_landmarks = []
+        
+        try:
+            results = app.face_mesh_image.process(image)
+            
+            if results and results.multi_face_landmarks:
+                # Drawing specifications for different facial features
+                lips_spec = app.mp_drawing.DrawingSpec(
+                    color=(0, 0, 255),  # Red for lips
+                    thickness=1,
+                    circle_radius=0
+                )
+                eyes_spec = app.mp_drawing.DrawingSpec(
+                    color=(255, 0, 0),  # Blue for eyes
+                    thickness=1,
+                    circle_radius=0
+                )
+                face_spec = app.mp_drawing.DrawingSpec(
+                    color=(0, 255, 0),  # Green for other facial features
+                    thickness=1,
+                    circle_radius=0
+                )
+                
+                overlay = frame.copy()
+                
+                # Draw face mesh with different colors for features
+                for face_landmarks in results.multi_face_landmarks:
+                    # Draw lips
+                    app.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=face_landmarks,
+                        connections=app.mp_face_mesh.FACEMESH_LIPS,
+                        landmark_drawing_spec=lips_spec,
+                        connection_drawing_spec=lips_spec
+                    )
+                    
+                    # Draw eyes
+                    app.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=face_landmarks,
+                        connections=app.mp_face_mesh.FACEMESH_LEFT_EYE,
+                        landmark_drawing_spec=eyes_spec,
+                        connection_drawing_spec=eyes_spec
+                    )
+                    app.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=face_landmarks,
+                        connections=app.mp_face_mesh.FACEMESH_RIGHT_EYE,
+                        landmark_drawing_spec=eyes_spec,
+                        connection_drawing_spec=eyes_spec
+                    )
+                    
+                    # Draw rest of the face mesh with fewer landmarks
+                    app.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=face_landmarks,
+                        connections=app.mp_face_mesh.FACEMESH_FACE_OVAL,  # Only draw face oval instead of all contours
+                        landmark_drawing_spec=face_spec,
+                        connection_drawing_spec=face_spec
+                    )
+                
+                alpha = 0.4  # Reduced opacity
+                frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
+                
+                # Collect landmarks data
+                for face_idx, face_landmarks in enumerate(results.multi_face_landmarks):
+                    face_data = {
+                        "face_index": face_idx,
+                        "landmarks": []
+                    }
+                    
+                    for idx, landmark in enumerate(face_landmarks.landmark):
+                        x = round(landmark.x * frame.shape[1], 2)
+                        y = round(landmark.y * frame.shape[0], 2)
+                        z = round(landmark.z, 3)
+                        
+                        face_data["landmarks"].append({
+                            "id": idx,
+                            "position": {
+                                "x": x,
+                                "y": y,
+                                "z": z
+                            }
+                        })
+                    
+                    frame_landmarks.append(face_data)
+            
+        except Exception as e:
+            logging.error(f"Error processing landmarks on image: {e}")
+        
+        return frame, frame_landmarks
+            
+    except Exception as e:
+        logging.error(f"Error in detect_landmarks_on_image: {e}")
         return None, []
 
 def update(app):
