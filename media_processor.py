@@ -13,13 +13,30 @@ def update(self):
                 results = self.face_mesh_video.process(image)
 
                 if results.multi_face_landmarks:
-                    self.mp_drawing.draw_landmarks(
-                        image=frame,
-                        landmark_list=results.multi_face_landmarks[0],
-                        connections=self.mp_face_mesh.FACEMESH_TESSELATION,
-                        landmark_drawing_spec=self.mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=1, circle_radius=1),
-                        connection_drawing_spec=self.mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=1),
+                    # Create semi-transparent drawing specs
+                    landmark_spec = self.mp_drawing.DrawingSpec(
+                        color=(255, 0, 0),
+                        thickness=2,
+                        circle_radius=1
                     )
+                    connection_spec = self.mp_drawing.DrawingSpec(
+                        color=(0, 0, 255),
+                        thickness=2
+                    )
+                    
+                    # Draw landmarks with transparency
+                    overlay = frame.copy()
+                    self.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=results.multi_face_landmarks[0],
+                        connections=self.mp_face_mesh.FACEMESH_CONTOURS,
+                        landmark_drawing_spec=landmark_spec,
+                        connection_drawing_spec=connection_spec,
+                    )
+                    
+                    # Apply transparency
+                    alpha = 0.6  # 60% opacity
+                    frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
                     
                     self.all_landmarks = []
                     for idx, landmark in enumerate(results.multi_face_landmarks[0].landmark):

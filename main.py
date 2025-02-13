@@ -82,8 +82,13 @@ class LandmarkDetectorApp:
                 self.ui.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
                 self.ui.canvas.image = self.photo
                 self.detect_landmarks_on_image()
+                logging.info(f"Successfully loaded image: {self.image_path}")
+            else:
+                logging.info("Image selection cancelled")
         except Exception as e:
             logging.error(f"Error loading image: {e}")
+            import traceback
+            logging.error(traceback.format_exc())
 
     def load_video(self):
         """Load a video from a file."""
@@ -195,7 +200,9 @@ class LandmarkDetectorApp:
 if __name__ == "__main__":
     try:
         window = tk.Tk()
-        window.geometry("800x600")
+        window.geometry("640x600")  # Updated to match UI dimensions
         app = LandmarkDetectorApp(window, "LanDetect - Landmark Detector")
     except Exception as e:
-        logging.exception("An error occurred during application startup:")
+        logging.error(f"Error starting application: {e}")
+        import traceback
+        logging.error(traceback.format_exc())

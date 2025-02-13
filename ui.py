@@ -4,10 +4,10 @@ class UI:
     def __init__(self, window, app):
         self.window = window
         self.app = app
-        self.window_width = 800
+        self.window_width = 640  # Reduced from 800
         self.window_height = 600
-        self.canvas_width = self.window_width - 20
-        self.canvas_height = self.window_height - 150
+        self.canvas_width = self.window_width - 20  # Will be 620
+        self.canvas_height = self.window_height - 150  # Will be 450
 
         self.canvas = tk.Canvas(window, width=self.canvas_width, height=self.canvas_height)
         self.canvas.grid(row=0, column=0, columnspan=4, padx=10, pady=10)

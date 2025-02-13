@@ -65,14 +65,28 @@ def detect_landmarks_on_image(self, image_path, face_mesh_image, mp_drawing, mp_
             valid_faces = [(size, landmarks) for size, landmarks in faces_with_size if size * width * height >= min_face_size * min_face_size]
             logging.info(f"Valid faces after size filtering: {len(valid_faces)}")
             
+            # Create semi-transparent drawing specs
+            landmark_spec = mp_drawing.DrawingSpec(
+                color=(255, 0, 0),
+                thickness=2,
+                circle_radius=1
+            )
+            connection_spec = mp_drawing.DrawingSpec(
+                color=(0, 0, 255),
+                thickness=2
+            )
+            
+            # Create overlay for transparent drawing
+            overlay = display_image.copy()
+            
             for face_idx, (size, face_landmarks) in enumerate(valid_faces):
                 logging.info(f"Processing face {face_idx + 1}, relative size: {size:.4f}")
                 mp_drawing.draw_landmarks(
-                    image=display_image,
+                    image=overlay,
                     landmark_list=face_landmarks,
                     connections=mp_face_mesh.FACEMESH_CONTOURS,
-                    landmark_drawing_spec=mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=2, circle_radius=1),
-                    connection_drawing_spec=mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2),
+                    landmark_drawing_spec=landmark_spec,
+                    connection_drawing_spec=connection_spec,
                 )
 
                 for idx, landmark in enumerate(face_landmarks.landmark):
@@ -80,6 +94,10 @@ def detect_landmarks_on_image(self, image_path, face_mesh_image, mp_drawing, mp_
                     y = landmark.y * height
                     self.all_landmarks.append({"face_index": face_idx, "landmark_id": idx, "x": x, "y": y})
                 logging.info(f"Face {face_idx + 1}: Processed {len(face_landmarks.landmark)} landmarks")
+            
+            # Apply transparency
+            alpha = 0.6  # 60% opacity
+            display_image = cv2.addWeighted(overlay, alpha, display_image, 1 - alpha, 0)
 
             self.image = Image.fromarray(display_image)
             self.image = self.image.resize((ui.canvas_width, ui.canvas_height), Image.Resampling.LANCZOS)
@@ -120,3 +138,5 @@ def detect_landmarks_on_image(self, image_path, face_mesh_image, mp_drawing, mp_
                 logging.warning("No faces detected in BGR color space either.")
     except Exception as e:
         logging.error(f"Error detecting landmarks: {e}")
+        import traceback
+        logging.error(traceback.format_exc())
