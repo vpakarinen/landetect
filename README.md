@@ -48,11 +48,11 @@ python main.py
 
 ## Screenshots
 
-![Example 1](screenshots/screenshot_20250212_202853.png)
+![Example 1](screenshots/Screenshot02-13-202513.58.33.png)
 
-![Example 2](screenshots/screenshot_20250212_194915.png)
+![Example 2](screenshots/Screenshot02-13-202513.59.32.png)
 
-![Example 3](screenshots/screenshot_20250212_195010.png)
+![Example 3](screenshots/Screenshot02-13-202514.00.21.png)
 
 ## Support
 
