@@ -7,65 +7,80 @@ from PIL import Image, ImageTk
 def process_video_frame(app, frame):
     """Process a single video frame and return the processed frame and landmarks."""
     try:
-        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame_landmarks = []
         
         try:
-            results = app.face_mesh_video.process(image)
+            results = app.face_mesh_video.process(rgb_image)
             
             if results and results.multi_face_landmarks:
-                # Drawing specifications for different facial features
                 lips_spec = app.mp_drawing.DrawingSpec(
-                    color=(0, 0, 255),  # Red for lips
+                    color=(0, 0, 255),
                     thickness=1,
                     circle_radius=0
                 )
                 eyes_spec = app.mp_drawing.DrawingSpec(
-                    color=(255, 0, 0),  # Blue for eyes
+                    color=(255, 0, 0),
                     thickness=1,
                     circle_radius=0
                 )
                 face_spec = app.mp_drawing.DrawingSpec(
-                    color=(0, 255, 0),  # Green for other facial features
+                    color=(0, 255, 0),
                     thickness=1,
                     circle_radius=0
                 )
                 
                 overlay = frame.copy()
                 
-                # Draw face mesh with different colors for features
                 for face_landmarks in results.multi_face_landmarks:
-                    # Draw lips
                     app.mp_drawing.draw_landmarks(
                         image=overlay,
                         landmark_list=face_landmarks,
                         connections=app.mp_face_mesh.FACEMESH_LIPS,
-                        landmark_drawing_spec=lips_spec,
+                        landmark_drawing_spec=None,
                         connection_drawing_spec=lips_spec
                     )
-                    
-                    # Draw eyes
+                    app.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=face_landmarks,
+                        connections=app.mp_face_mesh.FACEMESH_TESSELATION,
+                        landmark_drawing_spec=None,
+                        connection_drawing_spec=lips_spec
+                    )
                     app.mp_drawing.draw_landmarks(
                         image=overlay,
                         landmark_list=face_landmarks,
                         connections=app.mp_face_mesh.FACEMESH_LEFT_EYE,
-                        landmark_drawing_spec=eyes_spec,
+                        landmark_drawing_spec=None,
                         connection_drawing_spec=eyes_spec
                     )
                     app.mp_drawing.draw_landmarks(
                         image=overlay,
                         landmark_list=face_landmarks,
                         connections=app.mp_face_mesh.FACEMESH_RIGHT_EYE,
-                        landmark_drawing_spec=eyes_spec,
+                        landmark_drawing_spec=None,
                         connection_drawing_spec=eyes_spec
                     )
-                    
-                    # Draw rest of the face mesh with fewer landmarks
                     app.mp_drawing.draw_landmarks(
                         image=overlay,
                         landmark_list=face_landmarks,
-                        connections=app.mp_face_mesh.FACEMESH_FACE_OVAL,  # Only draw face oval instead of all contours
-                        landmark_drawing_spec=face_spec,
+                        connections=app.mp_face_mesh.FACEMESH_LEFT_EYEBROW,
+                        landmark_drawing_spec=None,
+                        connection_drawing_spec=eyes_spec
+                    )
+                    app.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=face_landmarks,
+                        connections=app.mp_face_mesh.FACEMESH_RIGHT_EYEBROW,
+                        landmark_drawing_spec=None,
+                        connection_drawing_spec=eyes_spec
+                    )
+                    
+                    app.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=face_landmarks,
+                        connections=app.mp_face_mesh.FACEMESH_FACE_OVAL,
+                        landmark_drawing_spec=None,
                         connection_drawing_spec=face_spec
                     )
                 
@@ -107,73 +122,86 @@ def process_video_frame(app, frame):
 def detect_landmarks_on_image(app, frame):
     """Detect landmarks on a single image."""
     try:
-        # Convert frame from BGR to RGB for processing
-        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame_landmarks = []
         
         try:
-            results = app.face_mesh_image.process(image)
+            results = app.face_mesh_image.process(rgb_image)
             
             if results and results.multi_face_landmarks:
-                # Drawing specifications for different facial features
                 lips_spec = app.mp_drawing.DrawingSpec(
-                    color=(0, 0, 255),  # Red for lips
+                    color=(0, 0, 255),
                     thickness=1,
                     circle_radius=0
                 )
                 eyes_spec = app.mp_drawing.DrawingSpec(
-                    color=(255, 0, 0),  # Blue for eyes
+                    color=(255, 0, 0),
                     thickness=1,
                     circle_radius=0
                 )
                 face_spec = app.mp_drawing.DrawingSpec(
-                    color=(0, 255, 0),  # Green for other facial features
+                    color=(0, 255, 0),
                     thickness=1,
                     circle_radius=0
                 )
                 
                 overlay = frame.copy()
                 
-                # Draw face mesh with different colors for features
                 for face_landmarks in results.multi_face_landmarks:
-                    # Draw lips
                     app.mp_drawing.draw_landmarks(
                         image=overlay,
                         landmark_list=face_landmarks,
                         connections=app.mp_face_mesh.FACEMESH_LIPS,
-                        landmark_drawing_spec=lips_spec,
+                        landmark_drawing_spec=None,
                         connection_drawing_spec=lips_spec
                     )
-                    
-                    # Draw eyes
+                    app.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=face_landmarks,
+                        connections=app.mp_face_mesh.FACEMESH_TESSELATION,
+                        landmark_drawing_spec=None,
+                        connection_drawing_spec=lips_spec
+                    )
                     app.mp_drawing.draw_landmarks(
                         image=overlay,
                         landmark_list=face_landmarks,
                         connections=app.mp_face_mesh.FACEMESH_LEFT_EYE,
-                        landmark_drawing_spec=eyes_spec,
+                        landmark_drawing_spec=None,
                         connection_drawing_spec=eyes_spec
                     )
                     app.mp_drawing.draw_landmarks(
                         image=overlay,
                         landmark_list=face_landmarks,
                         connections=app.mp_face_mesh.FACEMESH_RIGHT_EYE,
-                        landmark_drawing_spec=eyes_spec,
+                        landmark_drawing_spec=None,
                         connection_drawing_spec=eyes_spec
                     )
-                    
-                    # Draw rest of the face mesh with fewer landmarks
                     app.mp_drawing.draw_landmarks(
                         image=overlay,
                         landmark_list=face_landmarks,
-                        connections=app.mp_face_mesh.FACEMESH_FACE_OVAL,  # Only draw face oval instead of all contours
-                        landmark_drawing_spec=face_spec,
+                        connections=app.mp_face_mesh.FACEMESH_LEFT_EYEBROW,
+                        landmark_drawing_spec=None,
+                        connection_drawing_spec=eyes_spec
+                    )
+                    app.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=face_landmarks,
+                        connections=app.mp_face_mesh.FACEMESH_RIGHT_EYEBROW,
+                        landmark_drawing_spec=None,
+                        connection_drawing_spec=eyes_spec
+                    )
+                    
+                    app.mp_drawing.draw_landmarks(
+                        image=overlay,
+                        landmark_list=face_landmarks,
+                        connections=app.mp_face_mesh.FACEMESH_FACE_OVAL,
+                        landmark_drawing_spec=None,
                         connection_drawing_spec=face_spec
                     )
                 
-                alpha = 0.4  # Reduced opacity
+                alpha = 0.4
                 frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
                 
-                # Collect landmarks data
                 for face_idx, face_landmarks in enumerate(results.multi_face_landmarks):
                     face_data = {
                         "face_index": face_idx,
