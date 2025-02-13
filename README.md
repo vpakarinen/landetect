@@ -14,6 +14,7 @@ A Python-based desktop application for real-time landmark detection.
 ## Future Updates
 
 - Support for pose and hand detection
+- Extract lips and eyes from the face
 - Export data in multiple formats
 - Performance optimizations
 - Support for dark theme
