@@ -37,16 +37,30 @@ def process_video_frame(app, frame):
                 alpha = 0.6
                 frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
                 
-                # Always collect landmarks, regardless of real-time capture state
-                for idx, landmark in enumerate(results.multi_face_landmarks[0].landmark):
-                    x = landmark.x * frame.shape[1]
-                    y = landmark.y * frame.shape[0]
-                    frame_landmarks.append({
+                # Always collect landmarks, with improved data structure
+                for face_idx, face_landmarks in enumerate(results.multi_face_landmarks):
+                    face_data = {
                         "frame": app.frame_count,
-                        "landmark_id": idx,
-                        "x": x,
-                        "y": y
-                    })
+                        "face_index": face_idx,
+                        "landmarks": []
+                    }
+                    
+                    for idx, landmark in enumerate(face_landmarks.landmark):
+                        # Convert normalized coordinates to pixel coordinates
+                        x = round(landmark.x * frame.shape[1], 2)  # Round to 2 decimal places
+                        y = round(landmark.y * frame.shape[0], 2)  # Round to 2 decimal places
+                        z = round(landmark.z, 3)  # Include Z coordinate, rounded to 3 decimal places
+                        
+                        face_data["landmarks"].append({
+                            "id": idx,
+                            "position": {
+                                "x": x,
+                                "y": y,
+                                "z": z
+                            }
+                        })
+                    
+                    frame_landmarks.append(face_data)
             
         except Exception as e:
             logging.error(f"Error processing landmarks: {e}")

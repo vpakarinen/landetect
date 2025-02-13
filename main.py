@@ -171,12 +171,23 @@ class LandmarkDetectorApp:
             filename = f"landmark_data_{now.strftime('%Y%m%d_%H%M%S')}.json"
             filepath = os.path.join(self.landmarks_dir, filename)
             
-            # Create a copy of landmarks with timestamp
+            # Create a copy of landmarks with metadata
             landmarks_data = {
-                "landmarks": self.all_landmarks.copy(),
-                "timestamp": now.isoformat(),
-                "total_frames": self.frame_count,
-                "realtime_capture": self.realtime_capture
+                "metadata": {
+                    "timestamp": now.isoformat(),
+                    "total_frames": self.frame_count,
+                    "capture_mode": "real-time" if self.realtime_capture else "single-frame",
+                    "mediapipe_version": mp.__version__,
+                    "application_version": "1.0.0",
+                    "face_mesh_config": {
+                        "static_image_mode": False,
+                        "max_num_faces": 5,
+                        "refine_landmarks": True,
+                        "min_detection_confidence": 0.5,
+                        "min_tracking_confidence": 0.5
+                    }
+                },
+                "frames": self.all_landmarks
             }
             
             with open(filepath, 'w') as f:
