@@ -1,13 +1,15 @@
 import tkinter as tk
 import logging
 import cv2
+
 from PIL import Image, ImageTk
 
 def process_video_frame(app, frame):
-    """Process a single video frame and return the processed frame."""
+    """Process a single video frame and return the processed frame and landmarks."""
     try:
         # Convert frame from BGR to RGB for processing
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame_landmarks = []  # Store landmarks for current frame
         
         try:
             results = app.face_mesh_video.process(image)
@@ -35,21 +37,26 @@ def process_video_frame(app, frame):
                 alpha = 0.6
                 frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
                 
-                app.all_landmarks = []
+                # Always collect landmarks, regardless of real-time capture state
                 for idx, landmark in enumerate(results.multi_face_landmarks[0].landmark):
                     x = landmark.x * frame.shape[1]
                     y = landmark.y * frame.shape[0]
-                    app.all_landmarks.append({"frame": app.frame_count, "landmark_id": idx, "x": x, "y": y})
+                    frame_landmarks.append({
+                        "frame": app.frame_count,
+                        "landmark_id": idx,
+                        "x": x,
+                        "y": y
+                    })
             
         except Exception as e:
             logging.error(f"Error processing landmarks: {e}")
             # Continue with frame display even if landmark processing fails
         
-        return frame
+        return frame, frame_landmarks
             
     except Exception as e:
         logging.error(f"Error in process_video_frame: {e}")
-        return None
+        return None, []
 
 def update(app):
     """Update the video frame and process landmarks."""
@@ -62,7 +69,7 @@ def update(app):
             
         ret, frame = app.vid.read()
         if ret:
-            frame = process_video_frame(app, frame)
+            frame, frame_landmarks = process_video_frame(app, frame)
             
             if frame is not None:
                 try:
@@ -74,6 +81,10 @@ def update(app):
                     app.ui.canvas.image = app.photo
                     
                     app.frame_count += 1
+                    
+                    # Store landmarks for this frame if real-time capture is enabled
+                    if app.realtime_capture:
+                        app.all_landmarks.extend(frame_landmarks)
                     
                 except Exception as e:
                     logging.error(f"Error displaying frame: {e}")

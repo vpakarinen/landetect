@@ -1,7 +1,8 @@
-from PIL import Image, ImageTk
 import logging
 import cv2
 import os
+
+from PIL import Image, ImageTk
 
 def detect_landmarks_on_image(self, image_path, face_mesh_image, mp_drawing, mp_face_mesh, ui):
     """Detect landmarks on a loaded image."""
