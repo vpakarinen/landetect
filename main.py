@@ -1,21 +1,17 @@
-from PIL import Image, ImageTk
-from PIL import ImageGrab
-
 import mediapipe as mp
 import tkinter as tk
+import numpy as np
 import datetime
 import logging
 import json
 import cv2
 import os
-import numpy as np
-
-import tkinter as tk
-from tkinter import filedialog, ttk, messagebox
-from PIL import Image, ImageTk
-from PIL import ImageGrab
 
 from media_processor import process_video_frame, detect_landmarks_on_image
+
+from tkinter import filedialog
+from PIL import Image, ImageTk
+from PIL import ImageGrab
 from ui import UI
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s: %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -131,7 +127,7 @@ class LandmarkDetectorApp:
                     logging.info(f"Video properties - Width: {width}, Height: {height}, FPS: {fps}, Total Frames: {total_frames}")
                     
                     self.frame_count = 0
-                    self.playing = True  # Start in playing state
+                    self.playing = True
                     self.ui.btn_play_pause.config(state=tk.NORMAL, text="Pause")
                     logging.info("Successfully opened video and enabled play/pause button")
                 else:
@@ -156,21 +152,15 @@ class LandmarkDetectorApp:
         """Detect landmarks on a loaded image."""
         try:
             if hasattr(self, 'image_path') and (not hasattr(self, 'vid') or self.vid is None):
-                # Convert PIL Image to OpenCV format
                 cv_image = cv2.cvtColor(np.array(self.image), cv2.COLOR_RGB2BGR)
-                
-                # Process image and get landmarks
                 processed_image, landmarks = detect_landmarks_on_image(self, cv_image)
                 
                 if processed_image is not None:
-                    # Convert back to PIL format for display
                     processed_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
                     processed_pil = processed_pil.resize((self.ui.canvas_width, self.ui.canvas_height), Image.Resampling.LANCZOS)
                     self.photo = ImageTk.PhotoImage(processed_pil)
                     self.ui.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
                     self.ui.canvas.image = self.photo
-                    
-                    # Store landmarks
                     self.all_landmarks = landmarks
                     
         except Exception as e:
