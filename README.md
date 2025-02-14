@@ -19,6 +19,7 @@ A Python-based desktop application for real-time landmark detection.
 - Performance optimizations
 - Support for dark theme
 - More video controls
+- Keyboard shortcuts
 
 ## Installation
 
