@@ -49,6 +49,7 @@ class LandmarkDetectorApp:
 
         self.mp_face_mesh = mp.solutions.face_mesh
         self.mp_drawing = mp.solutions.drawing_utils
+        self.mp_drawing_styles = mp.solutions.drawing_styles
 
         self.face_mesh_image = self.mp_face_mesh.FaceMesh(
             static_image_mode=True,
@@ -65,6 +66,12 @@ class LandmarkDetectorApp:
         )
 
         self.ui = UI(window, self)
+        
+        self.window.bind('<space>', lambda e: self.toggle_play_pause())
+        self.window.bind('<Control-o>', lambda e: self.load_video())
+        self.window.bind('<Control-i>', lambda e: self.load_image())
+        self.window.bind('<Control-e>', lambda e: self.export_to_json())
+        
         self.update()
         self.window.mainloop()
 

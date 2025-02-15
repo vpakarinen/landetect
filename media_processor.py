@@ -165,22 +165,22 @@ def detect_landmarks_on_image(app, frame):
             
             if results and results.multi_face_landmarks:
                 lips_spec = app.mp_drawing.DrawingSpec(
-                    color=(255, 0, 0),  # Blue
+                    color=(255, 0, 0),
                     thickness=1,
                     circle_radius=0
                 )
                 eyes_spec = app.mp_drawing.DrawingSpec(
-                    color=(255, 0, 0),  # Blue
+                    color=(255, 0, 0),
                     thickness=1,
                     circle_radius=0
                 )
                 face_spec = app.mp_drawing.DrawingSpec(
-                    color=(0, 255, 0),  # Green
+                    color=(0, 255, 0),
                     thickness=1,
                     circle_radius=0
                 )
                 mesh_spec = app.mp_drawing.DrawingSpec(
-                    color=(255, 0, 0),  # Blue
+                    color=(255, 0, 0),
                     thickness=1,
                     circle_radius=0
                 )

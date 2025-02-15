@@ -22,15 +22,19 @@ class UI:
         control_frame.grid(row=2, column=0, columnspan=4, padx=10, pady=5)
 
         self.btn_load_image = tk.Button(control_frame, text="Load Image", width=20, command=self.app.load_image)
+        self.create_tooltip(self.btn_load_image, "Load image file (Ctrl+I)")
         self.btn_load_image.grid(row=0, column=0, padx=5, pady=5)
 
         self.btn_load_video = tk.Button(control_frame, text="Load Video", width=20, command=self.app.load_video)
+        self.create_tooltip(self.btn_load_video, "Load video file (Ctrl+O)")
         self.btn_load_video.grid(row=0, column=1, padx=5, pady=5)
 
         self.btn_export_to_json = tk.Button(control_frame, text="Export to JSON", width=20, command=self.app.export_to_json)
+        self.create_tooltip(self.btn_export_to_json, "Export landmarks to JSON (Ctrl+E)")
         self.btn_export_to_json.grid(row=0, column=2, padx=5, pady=5)
 
         self.btn_play_pause = tk.Button(control_frame, text="Pause", width=20, command=self.app.toggle_play_pause, state=tk.DISABLED)
+        self.create_tooltip(self.btn_play_pause, "Play/Pause video (Space)")
         self.btn_play_pause.grid(row=0, column=3, padx=5, pady=5)
 
         self.btn_screenshot = tk.Button(control_frame, text="Take Screenshot", width=20, command=self.app.take_screenshot)
@@ -51,6 +55,26 @@ class UI:
         window.grid_columnconfigure(0, weight=1)
         for i in range(4):
             window.grid_rowconfigure(i, weight=1 if i == 0 else 0)
+
+    def create_tooltip(self, widget, text):
+        """Create a tooltip for a given widget."""
+        def show_tooltip(event):
+            tooltip = tk.Toplevel()
+            tooltip.wm_overrideredirect(True)
+            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+            
+            label = ttk.Label(tooltip, text=text, justify=tk.LEFT,
+                            background="#ffffe0", relief=tk.SOLID, borderwidth=1)
+            label.pack()
+            
+            def hide_tooltip():
+                tooltip.destroy()
+            
+            widget.tooltip = tooltip
+            widget.bind('<Leave>', lambda e: hide_tooltip())
+            tooltip.bind('<Leave>', lambda e: hide_tooltip())
+            
+        widget.bind('<Enter>', show_tooltip)
 
     def toggle_realtime_capture(self):
         is_enabled = self.realtime_capture_var.get()
