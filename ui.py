@@ -12,13 +12,17 @@ class UI:
 
         window.minsize(self.window_width, self.window_height)
         
-        self.canvas = tk.Canvas(window, width=self.canvas_width, height=self.canvas_height)
+        self.canvas = tk.Canvas(window, width=self.canvas_width, height=self.canvas_height, bg="black")
         self.canvas.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
+
+        self.canvas.bind('<Left>', lambda e: self.prev_frame()) 
+        self.canvas.bind('<Right>', lambda e: self.next_frame())
+        self.canvas.focus_set()
 
         separator = tk.Frame(window, height=2, bd=1, relief=tk.SUNKEN)
         separator.grid(row=1, column=0, columnspan=4, padx=5, pady=5, sticky="ew")
 
-        control_frame = ttk.Frame(window)
+        control_frame = ttk.LabelFrame(window, text="Controls")
         control_frame.grid(row=2, column=0, columnspan=4, padx=10, pady=5)
 
         self.btn_load_image = tk.Button(control_frame, text="Load Image", width=20, command=self.app.load_image)
@@ -37,8 +41,21 @@ class UI:
         self.create_tooltip(self.btn_play_pause, "Play/Pause video (Space)")
         self.btn_play_pause.grid(row=0, column=3, padx=5, pady=5)
 
-        self.btn_screenshot = tk.Button(control_frame, text="Take Screenshot", width=20, command=self.app.take_screenshot)
-        self.btn_screenshot.grid(row=1, column=1, columnspan=2, padx=5, pady=5)
+        # Frame navigation controls
+        frame_control_frame = ttk.Frame(control_frame)
+        frame_control_frame.grid(row=1, column=0, columnspan=4, pady=5)
+
+        self.btn_prev_frame = tk.Button(frame_control_frame, text="←", width=3, command=self.prev_frame, state=tk.DISABLED)
+        self.create_tooltip(self.btn_prev_frame, "Previous frame (Left Arrow)")
+        self.btn_prev_frame.pack(side=tk.LEFT, padx=2)
+
+        self.btn_screenshot = tk.Button(frame_control_frame, text="Take Screenshot", width=20, command=self.app.take_screenshot)
+        self.create_tooltip(self.btn_screenshot, "Take screenshot (Ctrl+S)")
+        self.btn_screenshot.pack(side=tk.LEFT, padx=5)
+
+        self.btn_next_frame = tk.Button(frame_control_frame, text="→", width=3, command=self.next_frame, state=tk.DISABLED)
+        self.create_tooltip(self.btn_next_frame, "Next frame (Right Arrow)")
+        self.btn_next_frame.pack(side=tk.LEFT, padx=2)
 
         options_frame = ttk.LabelFrame(window, text="Options")
         options_frame.grid(row=3, column=0, columnspan=4, padx=10, pady=(5, 10), sticky="ew")
@@ -55,6 +72,24 @@ class UI:
         window.grid_columnconfigure(0, weight=1)
         for i in range(4):
             window.grid_rowconfigure(i, weight=1 if i == 0 else 0)
+
+    def prev_frame(self):
+        """Go to previous frame and pause video"""
+        if self.app.playing:
+            self.app.toggle_play_pause()
+        self.app.previous_frame()
+
+    def next_frame(self):
+        """Go to next frame and pause video"""
+        if self.app.playing:
+            self.app.toggle_play_pause()
+        self.app.next_frame()
+
+    def enable_frame_controls(self, enable=True):
+        """Enable or disable frame navigation controls"""
+        state = tk.NORMAL if enable else tk.DISABLED
+        self.btn_prev_frame.config(state=state)
+        self.btn_next_frame.config(state=state)
 
     def create_tooltip(self, widget, text):
         """Create a tooltip for a given widget."""

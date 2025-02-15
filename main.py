@@ -71,6 +71,7 @@ class LandmarkDetectorApp:
         self.window.bind('<Control-o>', lambda e: self.load_video())
         self.window.bind('<Control-i>', lambda e: self.load_image())
         self.window.bind('<Control-e>', lambda e: self.export_to_json())
+        self.window.bind('<Control-s>', lambda e: self.take_screenshot())
         
         self.update()
         self.window.mainloop()
@@ -106,54 +107,67 @@ class LandmarkDetectorApp:
             self.ui.btn_play_pause.config(state=tk.DISABLED)
 
     def load_video(self):
-        """Load a video from a file."""
+        """Load and process a video file."""
         try:
-            logging.info("Loading video...")
-            if hasattr(self, 'image_path'):
-                delattr(self, 'image_path')
-                self.ui.canvas.delete("all")
-
-            video_path = filedialog.askopenfilename(initialdir=".", title="Select a video",
-                                                   filetypes=(("Video files", "*.mp4;*.avi;*.mov"), ("all files", "*.*")))
-            if video_path:
-                logging.info(f"Selected video path: {video_path}")
-                if hasattr(self, 'vid') and self.vid:
-                    logging.info("Releasing previous video")
-                    self.vid.release()
+            file_path = filedialog.askopenfilename(
+                filetypes=[("Video files", "*.mp4 *.avi *.mov"), ("All files", "*.*")]
+            )
+            
+            if file_path:
+                logging.info("Loading video...")
+                self.vid = cv2.VideoCapture(file_path)
                 
-                self.vid = cv2.VideoCapture(video_path)
-                if not self.vid:
-                    raise Exception("Failed to create VideoCapture object")
+                if not self.vid.isOpened():
+                    raise Exception("Failed to open video file")
+                    
+                # Get video properties
+                width = int(self.vid.get(cv2.CAP_PROP_FRAME_WIDTH))
+                height = int(self.vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                fps = int(self.vid.get(cv2.CAP_PROP_FPS))
+                total_frames = int(self.vid.get(cv2.CAP_PROP_FRAME_COUNT))
                 
-                if self.vid.isOpened():
-                    width = int(self.vid.get(cv2.CAP_PROP_FRAME_WIDTH))
-                    height = int(self.vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                    fps = int(self.vid.get(cv2.CAP_PROP_FPS))
-                    total_frames = int(self.vid.get(cv2.CAP_PROP_FRAME_COUNT))
-                    
-                    logging.info(f"Video properties - Width: {width}, Height: {height}, FPS: {fps}, Total Frames: {total_frames}")
-                    
-                    self.frame_count = 0
-                    self.playing = True
-                    self.ui.btn_play_pause.config(state=tk.NORMAL, text="Pause")
-                    logging.info("Successfully opened video and enabled play/pause button")
-                else:
-                    error_msg = f"Error opening video file: {video_path}"
-                    logging.error(error_msg)
-                    tk.messagebox.showerror("Error", error_msg)
-                    self.vid = None
-                    self.ui.btn_play_pause.config(state=tk.DISABLED)
-            else:
-                logging.info("Video selection cancelled")
-                self.ui.btn_play_pause.config(state=tk.DISABLED)
+                logging.info(f"Video properties - Width: {width}, Height: {height}, FPS: {fps}, Total Frames: {total_frames}")
+                
+                self.playing = True
+                self.frame_count = 0
+                self.ui.btn_play_pause.config(state=tk.NORMAL)
+                self.ui.btn_play_pause.config(text="Pause")
+                self.ui.enable_frame_controls(True)  # Enable frame navigation buttons
+                
+                logging.info("Successfully opened video and enabled play/pause button")
+                
         except Exception as e:
-            error_msg = f"Error loading video: {str(e)}"
-            logging.error(error_msg)
-            tk.messagebox.showerror("Error", error_msg)
-            if hasattr(self, 'vid') and self.vid:
-                self.vid.release()
-            self.vid = None
-            self.ui.btn_play_pause.config(state=tk.DISABLED)
+            logging.error(f"Error loading video: {str(e)}")
+            tk.messagebox.showerror("Error", f"Error loading video: {str(e)}")
+
+    def previous_frame(self):
+        """Go to previous frame in video."""
+        if self.vid and self.vid.isOpened():
+            current_pos = int(self.vid.get(cv2.CAP_PROP_POS_FRAMES))
+            new_pos = max(0, current_pos - 2)  # Subtract 2 because reading advances 1 frame
+            self.vid.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
+            ret, frame = self.vid.read()
+            if ret:
+                frame, landmarks = process_video_frame(self, frame)
+                if frame is not None:
+                    image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+                    self.image = image.resize((self.ui.canvas_width, self.ui.canvas_height), Image.Resampling.LANCZOS)
+                    self.photo = ImageTk.PhotoImage(image=self.image)
+                    self.ui.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
+                    self.frame_count = new_pos
+
+    def next_frame(self):
+        """Go to next frame in video."""
+        if self.vid and self.vid.isOpened():
+            ret, frame = self.vid.read()
+            if ret:
+                frame, landmarks = process_video_frame(self, frame)
+                if frame is not None:
+                    image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+                    self.image = image.resize((self.ui.canvas_width, self.ui.canvas_height), Image.Resampling.LANCZOS)
+                    self.photo = ImageTk.PhotoImage(image=self.image)
+                    self.ui.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
+                    self.frame_count += 1
 
     def detect_landmarks_on_image(self):
         """Detect landmarks on a loaded image."""
