@@ -71,7 +71,6 @@ class LandmarkDetectorApp:
         self.window.bind('<Control-o>', lambda e: self.load_video())
         self.window.bind('<Control-i>', lambda e: self.load_image())
         self.window.bind('<Control-e>', lambda e: self.export_to_json())
-        self.window.bind('<Control-s>', lambda e: self.take_screenshot())
         
         self.update()
         self.window.mainloop()

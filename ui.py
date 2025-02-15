@@ -50,7 +50,6 @@ class UI:
         self.btn_prev_frame.pack(side=tk.LEFT, padx=2)
 
         self.btn_screenshot = tk.Button(frame_control_frame, text="Take Screenshot", width=20, command=self.app.take_screenshot)
-        self.create_tooltip(self.btn_screenshot, "Take screenshot (Ctrl+S)")
         self.btn_screenshot.pack(side=tk.LEFT, padx=5)
 
         self.btn_next_frame = tk.Button(frame_control_frame, text="→", width=3, command=self.next_frame, state=tk.DISABLED)
