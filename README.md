@@ -2,7 +2,7 @@
 
 A Python-based desktop application for real-time landmark detection and automatic data extraction.
 
-## Features
+## Features (v1.0)
 
 - Support for both image and video input
 - JSON export of landmark coordinates
