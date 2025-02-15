@@ -1,6 +1,6 @@
 # LanDetect - Landmark Detection
 
-A Python-based application for real-time landmark detection and automatic data extraction.
+A Python application for real-time landmark detection and automatic data extraction.
 
 ## Features (v1.0)
 
