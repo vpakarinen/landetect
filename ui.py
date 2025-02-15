@@ -1,6 +1,11 @@
 from tkinter import ttk
 import tkinter as tk
 
+from screenshot import take_screenshot
+from logger_setup import setup_logger
+
+logger = setup_logger(__name__)
+
 class UI:
     def __init__(self, window, app):
         self.window = window
@@ -12,7 +17,7 @@ class UI:
 
         window.minsize(self.window_width, self.window_height)
         
-        self.canvas = tk.Canvas(window, width=self.canvas_width, height=self.canvas_height, bg="black")
+        self.canvas = tk.Canvas(window, width=self.canvas_width, height=self.canvas_height, bg="gray")
         self.canvas.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
 
         self.canvas.bind('<Left>', lambda e: self.prev_frame()) 
@@ -49,7 +54,7 @@ class UI:
         self.create_tooltip(self.btn_prev_frame, "Previous frame (Left Arrow)")
         self.btn_prev_frame.pack(side=tk.LEFT, padx=2)
 
-        self.btn_screenshot = tk.Button(frame_control_frame, text="Take Screenshot", width=20, command=self.app.take_screenshot)
+        self.btn_screenshot = tk.Button(frame_control_frame, text="Take Screenshot", width=20, command=lambda: take_screenshot(self.app))
         self.btn_screenshot.pack(side=tk.LEFT, padx=5)
 
         self.btn_next_frame = tk.Button(frame_control_frame, text="→", width=3, command=self.next_frame, state=tk.DISABLED)

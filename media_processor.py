@@ -3,9 +3,11 @@ import logging
 import cv2
 
 from concurrent.futures import ThreadPoolExecutor
+from logger_setup import setup_logger
 from PIL import Image, ImageTk
 
 executor = ThreadPoolExecutor(max_workers=5)
+logger = setup_logger(__name__)
 frame_cache = {}
 
 def _process_video_frame_internal(app, frame):

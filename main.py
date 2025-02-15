@@ -11,7 +11,6 @@ from media_processor import process_video_frame, detect_landmarks_on_image
 
 from tkinter import filedialog
 from PIL import Image, ImageTk
-from PIL import ImageGrab
 from ui import UI
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s: %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -34,8 +33,6 @@ class LandmarkDetectorApp:
         self.last_screenshot_time = 0
         self.last_export_time = 0
         self.throttle_delay = 1000
-
-        self.setup_logging()
 
         self.vid = None
         self.image_path = None
@@ -78,7 +75,6 @@ class LandmarkDetectorApp:
     def load_image(self):
         """Load an image from a file."""
         try:
-            logging.info("Loading image...")
             if hasattr(self, 'vid') and self.vid:
                 self.vid.release()
                 self.vid = None
@@ -114,12 +110,12 @@ class LandmarkDetectorApp:
             
             if file_path:
                 logging.info("Loading video...")
+                logging.debug("Video file selection initiated")
                 self.vid = cv2.VideoCapture(file_path)
                 
                 if not self.vid.isOpened():
                     raise Exception("Failed to open video file")
                     
-                # Get video properties
                 width = int(self.vid.get(cv2.CAP_PROP_FRAME_WIDTH))
                 height = int(self.vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
                 fps = int(self.vid.get(cv2.CAP_PROP_FPS))
@@ -127,13 +123,27 @@ class LandmarkDetectorApp:
                 
                 logging.info(f"Video properties - Width: {width}, Height: {height}, FPS: {fps}, Total Frames: {total_frames}")
                 
-                self.playing = True
+                ret, frame = self.vid.read()
+                if ret:
+                    from media_processor import process_video_frame
+                    frame, _ = process_video_frame(self, frame)
+                    if frame is not None:
+                        image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+                        image = image.resize((self.ui.canvas_width, self.ui.canvas_height), Image.Resampling.LANCZOS)
+                        photo = ImageTk.PhotoImage(image)
+                        self.ui.canvas.create_image(0, 0, image=photo, anchor=tk.NW)
+                        self.ui.canvas.image = photo
+                
+                self.playing = False
                 self.frame_count = 0
                 self.ui.btn_play_pause.config(state=tk.NORMAL)
-                self.ui.btn_play_pause.config(text="Pause")
-                self.ui.enable_frame_controls(True)  # Enable frame navigation buttons
+                self.ui.btn_play_pause.config(text="Play")
+                self.ui.enable_frame_controls(True)
                 
-                logging.info("Successfully opened video and enabled play/pause button")
+                logging.info("Successfully opened video and loaded in paused state with first frame displayed")
+            else:
+                logging.debug("Video file selection dialog closed with no file selected")
+                logging.info("Video selection cancelled")
                 
         except Exception as e:
             logging.error(f"Error loading video: {str(e)}")
@@ -143,11 +153,11 @@ class LandmarkDetectorApp:
         """Go to previous frame in video."""
         if self.vid and self.vid.isOpened():
             current_pos = int(self.vid.get(cv2.CAP_PROP_POS_FRAMES))
-            new_pos = max(0, current_pos - 2)  # Subtract 2 because reading advances 1 frame
+            new_pos = max(0, current_pos - 2)
             self.vid.set(cv2.CAP_PROP_POS_FRAMES, new_pos)
             ret, frame = self.vid.read()
             if ret:
-                frame, landmarks = process_video_frame(self, frame)
+                frame, _ = process_video_frame(self, frame)
                 if frame is not None:
                     image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                     self.image = image.resize((self.ui.canvas_width, self.ui.canvas_height), Image.Resampling.LANCZOS)
@@ -160,7 +170,7 @@ class LandmarkDetectorApp:
         if self.vid and self.vid.isOpened():
             ret, frame = self.vid.read()
             if ret:
-                frame, landmarks = process_video_frame(self, frame)
+                frame, _ = process_video_frame(self, frame)
                 if frame is not None:
                     image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                     self.image = image.resize((self.ui.canvas_width, self.ui.canvas_height), Image.Resampling.LANCZOS)
@@ -236,33 +246,6 @@ class LandmarkDetectorApp:
             logging.error(error_msg)
             tk.messagebox.showerror("Error", error_msg)
 
-    def take_screenshot(self):
-        """Take a screenshot of the current canvas content."""
-        canvas_content = self.ui.canvas.find_all()
-        if not canvas_content:
-            logging.warning("Canvas is empty. Can't take screenshot.")
-            return
-
-        current_time = int(datetime.datetime.now().timestamp() * 1000)
-        if current_time - self.last_screenshot_time < self.throttle_delay:
-            return
-        self.last_screenshot_time = current_time
-
-        try:
-            x = self.window.winfo_rootx() + self.ui.canvas.winfo_x()
-            y = self.window.winfo_rooty() + self.ui.canvas.winfo_y()
-            x1 = x + self.ui.canvas.winfo_width()
-            y1 = y + self.ui.canvas.winfo_height()
-
-            screenshot = ImageGrab.grab().crop((x, y, x1, y1))
-
-            now = datetime.datetime.now()
-            filename = f"screenshot_{now.strftime('%Y%m%d_%H%M%S')}.png"
-            filepath = os.path.join(self.screenshots_dir, filename)
-            screenshot.save(filepath)
-            logging.info(f"Screenshot saved to {filepath}")
-        except Exception as e:
-            logging.error(f"Error taking screenshot: {e}")
 
     def start_realtime_capture(self):
         """Start real-time landmark capture"""
@@ -329,27 +312,6 @@ class LandmarkDetectorApp:
         finally:
             self.window.after(max(1, self.delay // 2), self.update)
 
-    def setup_logging(self):
-        """Setup logging configuration with timestamp-based log files."""
-        now = datetime.datetime.now()
-        log_filename = os.path.join(self.logs_dir, f"landetect_{now.strftime('%Y%m%d_%H%M%S')}.log")
-
-        file_handler = logging.FileHandler(log_filename)
-        file_handler.setLevel(logging.INFO)
-        file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        file_handler.setFormatter(file_formatter)
-
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
-        console_formatter = logging.Formatter('%(asctime)s: %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-        console_handler.setFormatter(console_formatter)
-
-        logger = logging.getLogger()
-        logger.setLevel(logging.INFO)
-
-        logger.handlers = []
-        logger.addHandler(file_handler)
-        logger.addHandler(console_handler)
 
     def toggle_play_pause(self):
         """Toggle video playback state."""
@@ -366,11 +328,13 @@ class LandmarkDetectorApp:
             self.ui.btn_play_pause.config(text="Play")
 
 if __name__ == "__main__":
+    from logger_setup import setup_logger
+    logger = setup_logger(__name__)
     try:
         window = tk.Tk()
         window.geometry("640x600")
         app = LandmarkDetectorApp(window, "LanDetect - Landmark Detector")
     except Exception as e:
-        logging.error(f"Error starting application: {e}")
+        logger.exception("Error starting application")
         import traceback
-        logging.error(traceback.format_exc())
+        logger.error(traceback.format_exc())

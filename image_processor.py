@@ -2,7 +2,10 @@ import logging
 import cv2
 import os
 
+from logger_setup import setup_logger
 from PIL import Image, ImageTk
+
+logger = setup_logger(__name__)
 
 def detect_landmarks_on_image(self, image_path, face_mesh_image, mp_drawing, mp_face_mesh, ui):
     """Detect landmarks on a loaded image."""
