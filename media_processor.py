@@ -2,11 +2,21 @@ import tkinter as tk
 import logging
 import cv2
 
+from concurrent.futures import ThreadPoolExecutor
 from PIL import Image, ImageTk
 
-def process_video_frame(app, frame):
-    """Process a single video frame and return the processed frame and landmarks."""
+executor = ThreadPoolExecutor(max_workers=5)
+frame_cache = {}
+
+def _process_video_frame_internal(app, frame):
+    """Internal helper to process a single video frame and return the processed frame and landmarks."""
     try:
+        original_h, original_w = frame.shape[:2]
+        scale_factor = 1.0
+        if original_w < 640 or original_h < 480:
+            scale_factor = max(640 / original_w, 480 / original_h)
+            frame = cv2.resize(frame, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_CUBIC)
+
         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame_landmarks = []
         
@@ -15,22 +25,22 @@ def process_video_frame(app, frame):
             
             if results and results.multi_face_landmarks:
                 lips_spec = app.mp_drawing.DrawingSpec(
-                    color=(255, 0, 0),  # Blue
+                    color=(255, 0, 0),
                     thickness=1,
                     circle_radius=0
                 )
                 eyes_spec = app.mp_drawing.DrawingSpec(
-                    color=(255, 0, 0),  # Blue
+                    color=(255, 0, 0),
                     thickness=1,
                     circle_radius=0
                 )
                 face_spec = app.mp_drawing.DrawingSpec(
-                    color=(0, 255, 0),  # Green
+                    color=(0, 255, 0),
                     thickness=1,
                     circle_radius=0
                 )
                 mesh_spec = app.mp_drawing.DrawingSpec(
-                    color=(255, 0, 0),  # Blue
+                    color=(255, 0, 0),
                     thickness=1,
                     circle_radius=0
                 )
@@ -100,8 +110,14 @@ def process_video_frame(app, frame):
                     }
                     
                     for idx, landmark in enumerate(face_landmarks.landmark):
-                        x = round(landmark.x * frame.shape[1], 2)
-                        y = round(landmark.y * frame.shape[0], 2)
+                        x = landmark.x * frame.shape[1]
+                        y = landmark.y * frame.shape[0]
+                        if scale_factor > 1.0:
+                            x = round(x / scale_factor, 2)
+                            y = round(y / scale_factor, 2)
+                        else:
+                            x = round(x, 2)
+                            y = round(y, 2)
                         z = round(landmark.z, 3)
                         
                         face_data["landmarks"].append({
@@ -118,11 +134,25 @@ def process_video_frame(app, frame):
         except Exception as e:
             logging.error(f"Error processing landmarks: {e}")
         
+        if scale_factor > 1.0:
+            frame = cv2.resize(frame, (original_w, original_h), interpolation=cv2.INTER_AREA)
+            
         return frame, frame_landmarks
             
     except Exception as e:
-        logging.error(f"Error in process_video_frame: {e}")
+        logging.error(f"Error in _process_video_frame_internal: {e}")
         return None, []
+
+def process_video_frame(app, frame):
+    """Process a single video frame using caching and multi-threading. Returns the processed frame and landmarks."""
+    key = (id(app.vid), app.frame_count)
+    global frame_cache, executor
+    if key in frame_cache:
+        future = frame_cache[key]
+    else:
+        future = executor.submit(_process_video_frame_internal, app, frame)
+        frame_cache[key] = future
+    return future.result()
 
 def detect_landmarks_on_image(app, frame):
     """Detect landmarks on a single image."""

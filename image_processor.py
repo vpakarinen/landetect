@@ -17,9 +17,17 @@ def detect_landmarks_on_image(self, image_path, face_mesh_image, mp_drawing, mp_
         logging.info(f"Starting landmark detection for image: {os.path.basename(image_path)}")
         
         height, width = image.shape[:2]
+        scale_factor = 1.0
+        
+        if width < 640 or height < 480:
+            scale_factor = max(640 / width, 480 / height)
+            image = cv2.resize(image, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_CUBIC)
+            logging.info(f"Upscaling image by factor {scale_factor:.2f} for better detection")
+            height, width = image.shape[:2]
+        
         min_face_size = int(min(height, width) * 0.1)
         
-        logging.info(f"Original image shape: {image.shape}")
+        logging.info(f"Working image dimensions: {width}x{height}")
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         logging.info(f"RGB image shape: {image_rgb.shape}")
         
@@ -89,11 +97,18 @@ def detect_landmarks_on_image(self, image_path, face_mesh_image, mp_drawing, mp_
                 for idx, landmark in enumerate(face_landmarks.landmark):
                     x = landmark.x * width
                     y = landmark.y * height
-                    self.all_landmarks.append({"face_index": face_idx, "landmark_id": idx, "x": x, "y": y})
+                    if scale_factor > 1.0:
+                        x = x / scale_factor
+                        y = y / scale_factor
+                    self.all_landmarks.append({"face_index": face_idx, "landmark_id": idx, "x": round(x, 2), "y": round(y, 2)})
                 logging.info(f"Face {face_idx + 1}: Processed {len(face_landmarks.landmark)} landmarks")
             
             alpha = 0.6
             display_image = cv2.addWeighted(overlay, alpha, display_image, 1 - alpha, 0)
+
+            if scale_factor > 1.0:
+                display_image = cv2.resize(display_image, (int(width/scale_factor), int(height/scale_factor)), interpolation=cv2.INTER_AREA)
+                logging.info(f"Scaled processed image back to original dimensions")
 
             self.image = Image.fromarray(display_image)
             self.image = self.image.resize((ui.canvas_width, ui.canvas_height), Image.Resampling.LANCZOS)
