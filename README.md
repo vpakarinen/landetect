@@ -2,14 +2,17 @@
 
 A Python application for real-time landmark detection and automatic data extraction.
 
-## Features (v1.0)
+## Features (v1.1)
 
 - Support for both image and video input
 - JSON export of landmark coordinates
 - Real-time facial landmark detection
 - Multi-face detection capability
 - Automatic screenshot capture
+- Frame by frame navigation
+- Simplistic and modern UI
 - Detailed logging system
+- Keyboard shortcuts
 
 ## Future Updates
 
@@ -19,7 +22,6 @@ A Python application for real-time landmark detection and automatic data extract
 - Performance optimizations
 - Support for dark theme
 - More video controls
-- Keyboard shortcuts
 
 ## Installation
 
