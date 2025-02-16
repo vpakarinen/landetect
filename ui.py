@@ -46,7 +46,6 @@ class UI:
         self.create_tooltip(self.btn_play_pause, "Play/Pause video (Space)")
         self.btn_play_pause.grid(row=0, column=3, padx=5, pady=5)
 
-        # Frame navigation controls
         frame_control_frame = ttk.Frame(control_frame)
         frame_control_frame.grid(row=1, column=0, columnspan=4, pady=5)
 
@@ -68,6 +67,7 @@ class UI:
         self.realtime_capture_cb = ttk.Checkbutton(
             options_frame, 
             text="Capture landmarks in real-time",
+            takefocus=0,
             variable=self.realtime_capture_var,
             command=self.toggle_realtime_capture
         )
@@ -101,23 +101,84 @@ class UI:
             tooltip = tk.Toplevel()
             tooltip.wm_overrideredirect(True)
             tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
-            
             label = ttk.Label(tooltip, text=text, justify=tk.LEFT,
-                            background="#ffffe0", relief=tk.SOLID, borderwidth=1)
+                              background="#ffffe0", relief=tk.SOLID, borderwidth=1)
             label.pack()
-            
             def hide_tooltip():
                 tooltip.destroy()
-            
             widget.tooltip = tooltip
             widget.bind('<Leave>', lambda e: hide_tooltip())
             tooltip.bind('<Leave>', lambda e: hide_tooltip())
-            
         widget.bind('<Enter>', show_tooltip)
 
     def toggle_realtime_capture(self):
         is_enabled = self.realtime_capture_var.get()
         if is_enabled:
             self.app.start_realtime_capture()
+            if not self.app.playing:
+                self.app.toggle_play_pause()
+            self.btn_play_pause.config(state=tk.DISABLED, text="Pause")
         else:
             self.app.stop_realtime_capture()
+            self.btn_play_pause.config(state=tk.NORMAL, text="Play")
+        self.window.after(50, lambda: self.canvas.focus_set())
+    
+    def force_start_capture(self):
+        logger.info("Force starting real-time capture.")
+        self.app.start_realtime_capture()
+        if not self.app.playing:
+            self.app.toggle_play_pause()
+        self.btn_play_pause.config(state=tk.DISABLED, text="Pause")
+        
+    def video_ended(self):
+        """Callback invoked when video playback ends."""
+        self.app.stop_realtime_capture()
+        if self.app.playing:
+            self.app.toggle_play_pause()
+        self.app.playing = False
+        if hasattr(self.app, 'cleanup'):
+            try:
+                self.app.cleanup()
+            except Exception:
+                pass
+        else:
+            for method in ['stop_video', 'cleanup_video', 'terminate_video']:
+                if hasattr(self.app, method):
+                    try:
+                        getattr(self.app, method)()
+                    except Exception:
+                        pass
+        self.realtime_capture_var.set(False)
+        self.btn_play_pause.config(state=tk.NORMAL, text="Play")
+        self.realtime_capture_cb.config(state=tk.DISABLED)
+
+        logger.info("Video ended; video stopped, playback reset, background processes terminated, and real-time capture disabled.")
+
+def filter_duplicate_meshes(meshes, base_threshold=50):
+    """Filter out duplicate meshes that are too close in proximity."""
+    if not meshes:
+        return []
+    filtered = [meshes[0]]
+    for mesh in meshes[1:]:
+        threshold = base_threshold
+        if 'angle' in mesh and abs(mesh['angle']) > 30:
+            threshold = int(base_threshold * 1.5)
+        duplicate = False
+        for f in filtered:
+            dx = mesh['center'][0] - f['center'][0]
+            dy = mesh['center'][1] - f['center'][1]
+            if (dx**2 + dy**2)**0.5 < threshold:
+                duplicate = True
+                break
+        if not duplicate:
+            filtered.append(mesh)
+    return filtered
+
+def draw_meshes(meshes, image):
+    """Draw meshes on the given image after filtering duplicates."""
+    filtered_meshes = filter_duplicate_meshes(meshes)
+    from logger_setup import setup_logger
+    logger = setup_logger(__name__)
+    for mesh in filtered_meshes:
+        logger.info(f"Drawing mesh at {mesh['center']}")
+    return image

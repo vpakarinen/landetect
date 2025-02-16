@@ -1,6 +1,6 @@
+import logging.config
 import logging
 import os
-import logging.config
 
 def setup_logger(name=None):
     """Configure logging for the entire application using a dictionary configuration."""

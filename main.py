@@ -98,7 +98,6 @@ class LandmarkDetectorApp:
             import traceback
             logging.error(traceback.format_exc())
         finally:
-            logging.info("Disabling play/pause button in load_image")
             self.ui.btn_play_pause.config(state=tk.DISABLED)
 
     def load_video(self):
@@ -109,7 +108,6 @@ class LandmarkDetectorApp:
             )
             
             if file_path:
-                logging.info("Loading video...")
                 logging.debug("Video file selection initiated")
                 self.vid = cv2.VideoCapture(file_path)
                 
@@ -140,7 +138,7 @@ class LandmarkDetectorApp:
                 self.ui.btn_play_pause.config(text="Play")
                 self.ui.enable_frame_controls(True)
                 
-                logging.info("Successfully opened video and loaded in paused state with first frame displayed")
+                logging.info(f"Successfully loaded video: {file_path}")
             else:
                 logging.debug("Video file selection dialog closed with no file selected")
                 logging.info("Video selection cancelled")
@@ -320,7 +318,6 @@ class LandmarkDetectorApp:
             return
             
         self.playing = not self.playing
-        logging.info(f"Video playback {'resumed' if self.playing else 'paused'}")
         
         if self.playing:
             self.ui.btn_play_pause.config(text="Pause")
