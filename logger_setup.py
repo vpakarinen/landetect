@@ -4,6 +4,10 @@ import os
 
 def setup_logger(name=None):
     """Configure logging for the entire application using a dictionary configuration."""
+    logger = logging.getLogger(name) if name else logging.getLogger()
+    if logger.hasHandlers():
+        return logger
+
     log_level = logging.DEBUG if os.environ.get("DEBUG_MODE", "False").lower() == "true" else logging.INFO
 
     if not os.path.exists("logs"):
@@ -39,7 +43,6 @@ def setup_logger(name=None):
     }
 
     logging.config.dictConfig(config)
-    
-    logger = logging.getLogger() if name is None else logging.getLogger(name)
+    logger = logging.getLogger(name) if name else logging.getLogger()
     logger.info("Logger configured, logging to file 'logs/app.log'")
     return logger
