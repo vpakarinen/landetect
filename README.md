@@ -25,19 +25,14 @@ A Python application for real-time landmark detection and automatic data extract
 
 ## Installation
 
-1. Clone the repository:
-```bash
-git clone https://github.com/vpakarinen/landetect.git
-cd landetect
-```
-
+## Installation
+1. Clone the repository
 2. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
 ## Usage
-
 Run the application:
 ```bash
 python main.py
@@ -55,16 +50,6 @@ python main.py
 ![Example 1](screenshots/Screenshot02-20-202516.39.10.png)
 
 ![Example 2](screenshots/Screenshot02-20-202516.37.30.png)
-
-## Support
-
-For support and bug reports, please:
-
-1. Check the logs in the `logs` directory for detailed error information
-2. Create an issue in the GitHub repository with:
-   - Description of the problem
-   - Steps to reproduce
-   - Log file contents
 
 ## License
 
