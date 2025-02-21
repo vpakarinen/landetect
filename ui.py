@@ -67,7 +67,7 @@ class UI:
         self.create_tooltip(self.btn_next_frame, "Next frame (Right Arrow)")
         self.btn_next_frame.pack(side=tk.LEFT, padx=2)
 
-        options_frame = tk.LabelFrame(window, text="Options")
+        options_frame = ttk.LabelFrame(window, text="Options")
         options_frame.grid(row=3, column=0, columnspan=4, padx=10, pady=(5, 10), sticky="ew")
 
         self.realtime_capture_var = tk.BooleanVar(value=False)
@@ -78,6 +78,24 @@ class UI:
             command=self.toggle_realtime_capture
         )
         self.realtime_capture_cb.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+
+        self.face_detection_var = tk.BooleanVar(value=True)  # Enabled by default
+        self.face_detection_cb = tk.Checkbutton(
+            options_frame, 
+            text="Enable face detection",
+            variable=self.face_detection_var,
+            command=lambda: self.app.detect_landmarks_on_image() if hasattr(self.app, 'detect_landmarks_on_image') else None
+        )
+        self.face_detection_cb.grid(row=0, column=1, padx=10, pady=10, sticky="w")
+
+        self.hand_detection_var = tk.BooleanVar()
+        self.hand_detection_cb = tk.Checkbutton(
+            options_frame, 
+            text="Enable hand detection",
+            variable=self.hand_detection_var,
+            command=lambda: self.app.detect_landmarks_on_image() if hasattr(self.app, 'detect_landmarks_on_image') else None
+        )
+        self.hand_detection_cb.grid(row=0, column=2, padx=10, pady=10, sticky="w")
 
         window.grid_columnconfigure(0, weight=1)
         for i in range(4):

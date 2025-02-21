@@ -47,6 +47,14 @@ class LandmarkDetectorApp:
         self.mp_face_mesh = mp.solutions.face_mesh
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
+        
+        # Initialize hand detection
+        self.mp_hands = mp.solutions.hands
+        self.hands = self.mp_hands.Hands(
+            static_image_mode=True,
+            max_num_hands=2,
+            min_detection_confidence=0.5
+        )
 
         self.face_mesh_image = self.mp_face_mesh.FaceMesh(
             static_image_mode=True,
@@ -63,6 +71,10 @@ class LandmarkDetectorApp:
         )
 
         self.ui = UI(window, self)
+        self.realtime_capture = False
+        
+        # Get hand detection setting from UI
+        self.hand_detection_enabled = self.ui.hand_detection_var
         
         self.window.bind('<space>', lambda e: self.toggle_play_pause())
         self.window.bind('<Control-o>', lambda e: self.load_video())
@@ -181,7 +193,75 @@ class LandmarkDetectorApp:
         try:
             if hasattr(self, 'image_path') and (not hasattr(self, 'vid') or self.vid is None):
                 cv_image = cv2.cvtColor(np.array(self.image), cv2.COLOR_RGB2BGR)
-                processed_image, landmarks = detect_landmarks_on_image(self, cv_image)
+                
+                # Initialize processed image and landmarks
+                processed_image = cv_image.copy()
+                landmarks = []
+                
+                # Face detection if enabled
+                if self.ui.face_detection_var.get():
+                    logging.info("Face detection enabled, processing...")
+                    processed_image, face_landmarks = detect_landmarks_on_image(self, cv_image)
+                    if face_landmarks:
+                        landmarks.extend(face_landmarks)
+                        logging.info("Face landmarks detected")
+                    else:
+                        logging.info("No faces detected in the image")
+                
+                # Hand detection if enabled
+                if self.ui.hand_detection_var.get():  
+                    logging.info("Hand detection enabled, processing...")  
+                    try:
+                        height, width = cv_image.shape[:2]
+                        image_rgb = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+                        hand_results = self.hands.process(image_rgb)
+                        
+                        if hand_results.multi_hand_landmarks:
+                            logging.info(f"Found {len(hand_results.multi_hand_landmarks)} hands")  
+                            for hand_landmarks, handedness in zip(hand_results.multi_hand_landmarks, hand_results.multi_handedness):
+                                # Create custom drawing styles for hands
+                                hand_landmark_style = self.mp_drawing.DrawingSpec(
+                                    color=(20, 80, 255),  # Deep blue for landmarks
+                                    thickness=2,          # Thinner points
+                                    circle_radius=1       # Smaller circles
+                                )
+                                hand_connection_style = self.mp_drawing.DrawingSpec(
+                                    color=(50, 50, 50),   # Dark gray for connections
+                                    thickness=1           # Thinner lines
+                                )
+                                
+                                # Draw hand landmarks with custom style
+                                self.mp_drawing.draw_landmarks(
+                                    processed_image,
+                                    hand_landmarks,
+                                    self.mp_hands.HAND_CONNECTIONS,
+                                    landmark_drawing_spec=hand_landmark_style,
+                                    connection_drawing_spec=hand_connection_style
+                                )
+                                
+                                # Add hand landmarks to the data
+                                hand_data = {
+                                    'handedness': handedness.classification[0].label,
+                                    'confidence': handedness.classification[0].score,
+                                    'landmarks': []
+                                }
+                                
+                                for idx, landmark in enumerate(hand_landmarks.landmark):
+                                    x = int(landmark.x * width)
+                                    y = int(landmark.y * height)
+                                    z = landmark.z
+                                    hand_data['landmarks'].append({
+                                        'id': idx,
+                                        'x': x,
+                                        'y': y,
+                                        'z': z
+                                    })
+                                
+                                landmarks.append({'hand_data': hand_data})
+                        else:
+                            logging.info("No hands detected in the image")
+                    except Exception as e:
+                        logging.error(f"Error in hand detection: {str(e)}")
                 
                 if processed_image is not None:
                     processed_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
@@ -190,7 +270,7 @@ class LandmarkDetectorApp:
                     self.ui.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
                     self.ui.canvas.image = self.photo
                     self.all_landmarks = landmarks
-                    
+
         except Exception as e:
             logging.error(f"Error detecting landmarks on image: {e}")
             import traceback
